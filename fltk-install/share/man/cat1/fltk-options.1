@@ -1,0 +1,82 @@
+[4mfltk-options[24m(1)             General Commands Manual            [4mfltk-options[24m(1)
+
+[1mNAME[0m
+       fltk-options - application to get and modify FLTK runtime options.
+
+
+[1mSYNOPSIS[0m
+       fltk-options [ -S[4moption[=value][24m ] [ -U[4moption[=value][24m ] [ -L ] [ -LS ] [
+       -LU ] [ -f ] [ -v ] [ --verbose ] [ -h[option] ] [ --help [option] ]
+
+[1mDESCRIPTION[0m
+       [4mfltk-options[24m  is  a  tool that allows you to access and change settings
+       related to the user interface in applications built  with  FLTK.  These
+       settings  will be applied when the program is launched. They can be set
+       at the system level or by  the  individual  user.  User  settings  take
+       precedence over system settings.
+
+       The following command line arguments are supported:
+
+       -S[4moption[=value][0m
+            Change or print system wide option.
+
+       -U[4moption[=value][0m
+            Change  or print user option. Values can be "0" or "OFF" to clear,
+            or "1" or "ON" to set the option. The value "-1" or "DEFAULT" sets
+            the option to its default value.  If no value is given,  the  cur‐
+            rent setting is returned as "-1", "0", or "1".
+
+       -L
+            List the value of all options.
+
+       -LS
+            List the value of all system options.
+
+       -LU
+            List the value of all user options.
+
+       -f
+            Suppress error messages concerning file access permissions.
+
+       -v, --verbose
+            Print additional information in command line mode.
+
+       -h[option], --help [option]
+            Prints  a help page. If an option is give, print detailed informa‐
+            tion for that option.
+
+       The following FLTK options are supported:
+
+       OPTION_VISIBLE_FOCUS
+            Draw a dotted rectangle in widget with keyboard focus.
+
+       OPTION_ARROW_FOCUS
+            Arrow keys will move focus beyond text input field.
+
+       OPTION_SHOW_TOOLTIPS
+            Show or hide tooltips.
+
+       OPTION_DND_TEXT
+            User can drag text from FLTK into other apps.
+
+       OPTION_FNFC_USES_GTK
+            Use GTK file chooser instead of FLTK if available.
+
+       OPTION_PRINTER_USES_GTK
+            Use GTK printer dialog instead of FLTK if available.
+
+       OPTION_SHOW_SCALING
+            Show the zoom factor in a transient popup window.
+
+       Calling fltk-options without options will launch fltk-options  interac‐
+       tive mode.
+
+[1mSEE ALSO[0m
+       fluid(1), fltk-config(1), fltk(3)
+       FLTK Programming Manual
+       FLTK Web Site, https://www.fltk.org/
+
+[1mAUTHORS[0m
+       Bill Spitzak and others.
+
+13. January 2023              Fast Light Tool Kit              [4mfltk-options[24m(1)

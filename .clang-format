@@ -1,0 +1,46 @@
+BasedOnStyle: LLVM
+
+# Отступы: 4 пробела вместо табуляции
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# АВТОМАТИЧЕСКАЯ ВСТАВКА ФИГУРНЫХ СКОБОК
+# Добавляет скобки для if, else, for, while, даже если там 1 выражение
+InsertBraces: true
+
+# Точечная настройка скобок
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true        # Скобка класса с новой строки
+  AfterControlStatement: Always # Скобка после if/for/while с новой строки
+  AfterFunction: true     # Скобка функции с новой строки
+  AfterNamespace: true    # Скобка namespace с новой строки
+  AfterStruct: true       # Скобка структуры с новой строки
+  AfterUnion: true        # Скобка union с новой строки
+  BeforeElse: true        # else всегда с новой строки
+  AfterEnum: false        # Игнорировать новую строку для enum (в одну линию)
+
+# Пробелы вокруг круглых скобок:
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true    # Пробел ПОСЛЕ операторов: if (expr), for (...)
+  AfterFunctionDeclarationName: true  # Пробел ПРИ ОБЪЯВЛЕНИИ функции: void func ()
+  AfterFunctionDefinitionName: true   # Пробел ПРИ ОПРЕДЕЛЕНИИ функции: void func () { ... }
+  BeforeNonEmptyParentheses: false    # НЕТ пробела при вызове функции: func(x)
+
+# Запрет объединять короткие блоки в одну строку
+AllowShortBlocksOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+# запретить функции в одну строку
+AllowShortFunctionsOnASingleLine: None
+
+# Разрешение для коротких enum в одну строку
+AllowShortEnumsOnASingleLine: true
+
+# Полное отключение сортировки инклудов
+SortIncludes: Never
+
+# Выравнивает и сохраняет структуру многострочных комментариев /** */
+ReflowComments: true

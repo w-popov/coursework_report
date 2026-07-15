@@ -246,7 +246,7 @@ int main (int argc, char **argv)
     window->show(argc, argv);
     Fl::check();
 #ifdef _WIN32
-    seticon(win);
+    seticon(window);
 #endif
 
     return Fl::run();

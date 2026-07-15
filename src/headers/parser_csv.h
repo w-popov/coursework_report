@@ -94,12 +94,15 @@ typedef int (*GetNextCharCallback)(void *source);
  */
 typedef int64_t (*GetPosCallback)(void *source);
 
+
+/**
+ * Источник парсинга
+ */
 struct ParseSource
 {
-    void *stream; // Указатель на FILE* или на строку char*
-    GetNextCharCallback get_char; // Функция чтения
-    GetPosCallback
-        get_pos; // Функция получения текущей позиции (для прогресс-бара)
+    void *stream;                   // Указатель на FILE* или на строку char*
+    GetNextCharCallback get_char;   // Функция чтения
+    GetPosCallback get_pos;         // Функция получения текущей позиции (для прогресс-бара)
 };
 
 struct ContextParser;

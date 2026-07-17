@@ -401,7 +401,7 @@ struct ContextParser *parse_csv (struct ContextParser *context,
             if (context->csv.current_row % 10000 == 0 && source->get_pos &&
                 context->clbs.clb_progress)
             {
-                context->clbs.clb_progress(source->get_pos(source->stream),
+                context->clbs.clb_progress(context->clbs.self, source->get_pos(source->stream),
                                            context->file_size);
             }
         }
@@ -454,7 +454,7 @@ struct ContextParser *parse_csv (struct ContextParser *context,
 
     if (source->get_pos && context->clbs.clb_progress)
     {
-        context->clbs.clb_progress(source->get_pos(source->stream),
+        context->clbs.clb_progress(context->clbs.self, source->get_pos(source->stream),
                                    context->file_size);
     }
     printf("\n");

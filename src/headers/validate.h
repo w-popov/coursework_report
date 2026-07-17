@@ -27,7 +27,7 @@ int validator_fields (long value, uint16_t num_field);
 /**
  * Прогрессбар во время парсинга файла
  */
-void print_progress_bar(int64_t current, int64_t total);
+void print_progress_bar(void *self, int64_t current, int64_t total);
 
 
 /**

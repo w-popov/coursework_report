@@ -1,4 +1,5 @@
 #include "view.hpp"
+#include "interfaces.hpp"
 #include <FL/Fl.H>
 #include <FL/Fl_Native_File_Chooser.H>
 #include <filesystem>
@@ -17,10 +18,7 @@ AppWindow::AppWindow(int width, int height, const char *title)
     this->align(FL_ALIGN_TOP);
 
     init_layout();
-
-    btn_open_file->callback(cb_open_file, this);
-    btn_parse_csv->callback(cb_parse_csv, this);
-}
+};
 
 void AppWindow::init_layout()
 {
@@ -70,7 +68,7 @@ void AppWindow::init_layout()
         progress_bar->maximum(100.0f);
         progress_bar->value(0.0f);
         progress_bar->selection_color(FL_BLUE);
-
+        progress_bar->hide();
         flex_bottom_status->end();
     }
 
@@ -83,7 +81,40 @@ void AppWindow::init_layout()
     this->end();
 }
 
-void AppWindow::handle_open_file()
+//////////////////////////// View //////////////////////////////////////////
+View::View(Fl_Double_Window *w) : window(static_cast<AppWindow*>(w))
+{
+    window->btn_open_file->callback(clb_open_file, this);
+    window->btn_parse_csv->callback(clb_parse_csv, this);
+}
+
+void View::update(const std::any &data, InterfacesApp::DataType datatype)
+{
+    switch (datatype)
+    {
+    case InterfacesApp::DataType::FullRowsList:
+
+        break;
+
+    case InterfacesApp::DataType::ErrorsParse:
+        update_progress_bar_value(100, 100);
+
+        break;
+
+    case InterfacesApp::DataType::ErrorOpenFile:
+        fl_alert("Ошибка: Не удалось открыть выбранный CSV файл!");
+        break;
+
+    case InterfacesApp::DataType::ErrorNullParse:
+        fl_alert("Критическая ошибка: Внутренний сбой структуры парсера!");
+        break;
+
+    case InterfacesApp::DataType::AverageTable:
+        break;
+    }
+};
+
+void View::handle_open_file()
 {
     Fl_Native_File_Chooser fnfc;
     fnfc.title("Выберите CSV файл");
@@ -98,53 +129,52 @@ void AppWindow::handle_open_file()
 
         set_status_file(short_name.c_str());
         update_progress_bar_value(0, 100);
-
+        
         if (on_file_selected)
         {
-            on_file_selected(path, callback_context);
+            on_file_selected(path);
         }
     }
-}
+};
 
-void AppWindow::handle_parse_csv()
+void View::handle_parse_csv()
 {
     if (on_start_parsing)
     {
-        on_start_parsing(callback_context);
+        on_start_parsing();
     }
-}
+};
 
-void AppWindow::set_status_file(const char *name)
+void View::set_status_file(const char *name)
 {
-    if (lbl_file_name)
+    if (window->lbl_file_name)
     {
-        lbl_file_name->label(name);
-        lbl_file_name->redraw();
+        window->lbl_file_name->copy_label(name);
+        window->lbl_file_name->redraw();
     }
-}
+};
 
-void AppWindow::update_progress_bar_value(int64_t current, int64_t total)
+void View::update_progress_bar_value(int64_t current, int64_t total)
 {
-    if (!progress_bar || total <= 0)
+    if (!window->progress_bar || total <= 0)
     {
         return;
     }
 
-    float percentage =
-        (static_cast<float>(current) * 100.0f) / static_cast<float>(total);
+    float percentage = (static_cast<float>(current) * 100.0f) / static_cast<float>(total);
     if (percentage > 100.0f)
     {
         percentage = 100.0f;
     }
 
-    progress_bar->value(percentage);
+    window->progress_bar->value(percentage);
 
     char pct_text[32];
-    std::snprintf(pct_text, sizeof(pct_text), "Парсинг: %.1f%%", percentage);
-    progress_bar->copy_label(pct_text);
+    snprintf(pct_text, sizeof(pct_text), "Парсинг: %.1f%%", percentage);
+    window->progress_bar->copy_label(pct_text);
 
-    progress_bar->redraw();
+    window->progress_bar->redraw();
     Fl::check();
-}
+};
 
 } // namespace ViewApp

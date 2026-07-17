@@ -2,24 +2,25 @@
 
 #include "interfaces.hpp"
 
-namespace ViewApp { class AppWindow; }
+namespace ViewApp { class View; }
 namespace ModelApp { class ModelParse; }
 
 namespace ControllerApp
 {
 
-class AppController : public InterfacesApp::Observer
+class AppController
 {
 private:
-    ViewApp::AppWindow* view;
+    ViewApp::View* view;
     ModelApp::ModelParse* model;
 
 public:
-    AppController(ViewApp::AppWindow* window, ModelApp::ModelParse* model_parse);
-    virtual ~AppController();
+    ~AppController();
+    AppController(ViewApp::View*, ModelApp::ModelParse*);
 
-    // Реализация Observer
-    void update(const std::any& data, InterfacesApp::DataType datatype) override;
+    // Установить прогрессбар
+    static void progress_bridge(void* self, int64_t current, int64_t total);
+    
 };
 
 } // namespace ControllerApp

@@ -170,12 +170,11 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    show_errors(errors_array, errors_array->size(errors_array));
+    show_errors(errors_array, array->size(array));
 
     if (!is_print)
     {
-        show_statistics((struct TemperatureStats *)array->raw_data(array),
-                        array->size(array), month_arg);
+        show_statistics((struct TemperatureStats *)array->raw_data(array), array->size(array), month_arg);
     }
     else
     {
@@ -187,11 +186,10 @@ int main (int argc, char *argv[])
         }
         else
         {
-            sort_by_month_and_temp(
-                (struct TemperatureStats *)array->raw_data(array),
+            sort_by_month_and_temp((struct TemperatureStats *)array->raw_data(array),
                 array->size(array), how_sort);
-            print_temperature_stats_array(
-                (struct TemperatureStats *)array->raw_data(array),
+
+            print_temperature_stats_array((struct TemperatureStats *)array->raw_data(array),
                 array->size(array));
         }
     }

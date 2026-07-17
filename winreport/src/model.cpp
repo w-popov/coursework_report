@@ -58,6 +58,7 @@ ModelApp::ModelParse::ModelParse()
     context->csv.delimiter = ";";
     context->csv.length_field = 0;
     context->csv.nums_field = 5;
+    context->clbs.self = nullptr;
     context->clbs.clb_progress = nullptr;
     context->clbs.clb_write_to_arr = write_to_array;
     context->array = array;

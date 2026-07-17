@@ -92,6 +92,15 @@ class ModelParse : public Observable
         }
     }
 
+    // Запись C++ адреса (View) в Си-структуру
+    inline void set_callback_context(void* user_data)
+    {
+        if (context)
+        {
+            context->clbs.self = user_data;
+        }
+    }
+
     inline const char *get_delimiter () const
     {
         return context ? context->csv.delimiter : nullptr;

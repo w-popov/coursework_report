@@ -107,7 +107,7 @@ struct ContextParser;
 /**
  * @brief Указатель на callback-функцию индикатора выполнения
  */
-typedef void (*CallbackProgressBar)(int64_t current, int64_t total);
+typedef void (*CallbackProgressBar)(void* self, int64_t current, int64_t total);
 
 /**
  * @brief Указатель на callback-функцию записи в массив данных
@@ -132,9 +132,9 @@ struct Csv
  */
 struct Callbacks
 {
+    void* self;   // Для контекста С++. В Си не используется.  
     CallbackProgressBar clb_progress; // Указатель на ф-цию прогрессбара
-    CallbackWriteToArray
-        clb_write_to_arr; // Указатель на ф-цию записи в массив данных
+    CallbackWriteToArray clb_write_to_arr; // Указатель на ф-цию записи в массив данных
 };
 
 /**

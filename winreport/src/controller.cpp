@@ -6,44 +6,58 @@
 
 namespace ControllerApp
 {
-
-AppController::AppController
-(ViewApp::AppWindow *window, ModelApp::ModelParse *model_parse) : view(window), model(model_parse)
+// static
+void AppController::progress_bridge(void* self, int64_t current, int64_t total)
 {
-    if (window && model_parse)
+    auto* current_view = static_cast<ViewApp::View*>(self);
+    
+    if (current_view)
     {
-        /* Связывание Си-указателя прогресса в модели напрямую с
-           методом окна через Си-лямбду */
-        static ViewApp::AppWindow *static_view = window;
-        model_parse->set_callback_progressbar(
-            [] (int64_t current, int64_t total) {
-                if (static_view)
-                {
-                    static_view->update_progress_bar_value(current, total);
-                }
-            });
+        current_view->update_progress_bar_value(current, total);
+    }
+}
 
-        model_parse->add_observer(this);
+// конструктор
+AppController::AppController
+(ViewApp::View *v, ModelApp::ModelParse *model) : view(v), model(model)
+{
+    model->add_observer(view);
 
-        // Настройка события кнопок окна
-        window->on_file_selected = [] (const char *path, void *context)
+    if (view && model)
+    {
+        model->set_callback_context(view);
+        model->set_callback_progressbar(progress_bridge);
+
+        model->add_observer(view);
+
+        // колбэк : отдать модели путь выбранного файла
+        view->on_file_selected = [model](const char *path)
         {
-            auto *m = static_cast<ModelApp::ModelParse *>(context);
-            if (m && path)
+            if (model && path)
             {
-                m->set_file_path(path);
+                model->set_file_path(path);
             }
         };
 
-        window->on_start_parsing = [] (void *context)
+        // колбэк: запуск парсинга
+        view->on_start_parsing = [model, v]()
         {
-            auto *m = static_cast<ModelApp::ModelParse *>(context);
-            if (m)
+            if (v && v->window)
             {
-                const char *path = m->get_file_path();
+                v->window->progress_bar->show();
+                if (v->window->flex_bottom_status) 
+                {
+                    v->window->flex_bottom_status->layout();
+                    v->window->redraw();
+                }
+                Fl::flush(); 
+            } 
+            if (model)
+            {
+                const char *path = model->get_file_path(); 
                 if (path && path[0] != '\0')
                 {
-                    m->parsing(path);
+                    model->parsing(path);
                 }
                 else
                 {
@@ -51,49 +65,18 @@ AppController::AppController
                 }
             }
         };
-
-        window->callback_context = model_parse;
     }
 }
 
 AppController::~AppController()
 {
-    if (model)
+    if (model) 
     {
         model->set_callback_progressbar(nullptr);
-        model->remove_observer(this);
+        model->set_callback_context(nullptr);
     }
-}
+};
 
-void AppController::update(const std::any &data, InterfacesApp::DataType datatype)
-{
-    if (!view)
-    {
-        return;
-    }
 
-    switch (datatype)
-    {
-    case InterfacesApp::DataType::FullRowsList:
-
-        break;
-
-    case InterfacesApp::DataType::ErrorsParse:
-        view->update_progress_bar_value(100, 100);
-
-        break;
-
-    case InterfacesApp::DataType::ErrorOpenFile:
-        fl_alert("Ошибка: Не удалось открыть выбранный CSV файл!");
-        break;
-
-    case InterfacesApp::DataType::ErrorNullParse:
-        fl_alert("Критическая ошибка: Внутренний сбой структуры парсера!");
-        break;
-
-    case InterfacesApp::DataType::AverageTable:
-        break;
-    }
-}
 
 } // namespace ControllerApp

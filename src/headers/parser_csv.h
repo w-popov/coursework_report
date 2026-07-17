@@ -89,9 +89,6 @@ struct ErrorParse
  */
 typedef int (*GetNextCharCallback)(void *source);
 
-/**
- * @brief Указатель на callback-функцию для прогрессбара
- */
 typedef int64_t (*GetPosCallback)(void *source);
 
 

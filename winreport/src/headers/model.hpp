@@ -1,133 +1,175 @@
 #pragma once
 
-#include "parser_csv.h"
+#include <string>
+#include <vector>
+#include <any>
 #include "interfaces.hpp"
+#include "parser_csv.h"
 
 namespace ModelApp
 {
 
 /**
- * Контекст парсинга
+ * Базовый класс для источников данных (Model)
  */
-class Context
+class Observable
 {
   private:
-    struct ContextParser context = {};              // Контекст СИ
-    struct Csv csv = {};                            // Контекст для работы парсера СИ
-    struct Callbacks clbs = {};                     // Обратные вызовы СИ
-    struct IStorage_t *array = nullptr;             // Указатель на массив структук данных СИ
-    struct IStorage_t *errors_parse = nullptr;      // Указатель на массив структур ошибок СИ
-    size_t file_size = 0;                           // Размер файла
+    std::vector<InterfacesApp::Observer *> observers;
 
   public:
-    Context();
-    Context(const Context &)                = delete;
-    Context(Context &&) noexcept            = delete;
-    Context &operator=(const Context &)     = delete;
-    Context &operator=(Context &&) noexcept = delete;
+    virtual ~Observable() = default;
 
-    inline const struct ContextParser *get_context() const 
+    /**
+     * Добавить подписчика
+     */
+    inline void add_observer (InterfacesApp::Observer *o)
     {
-        return &context;
+        if (o)
+        {
+            observers.push_back(o);
+        }
+    }
+
+    /**
+     * Убрать подписчика
+     */
+    inline void remove_observer (InterfacesApp::Observer *o)
+    {
+        observers.erase(std::remove(observers.begin(), observers.end(), o),
+                        observers.end());
+    }
+
+  protected:
+    /**
+     * Уведомить всех подписчиков об изменении.
+     * protected. Метод доступен только наследникам
+     */
+    inline void notify (const std::any &data, InterfacesApp::DataType datatype)
+    {
+        for (auto *obs : observers)
+        {
+            obs->update(data, datatype);
+        }
+    }
+};
+
+/**
+ * Основная модель парсинга
+ */
+class ModelParse : public Observable
+{
+  private:
+    int64_t filesize = -1;
+    struct SVector array_vec;
+    struct SVector err_array_vec;
+    struct IStorage_t *array = nullptr;
+    struct IStorage_t *errors_array = nullptr;
+    struct ContextParser *context = nullptr;
+    struct ParseSource *parse_source = nullptr;
+    std::string file_path;
+
+  public:
+    ~ModelParse();
+    ModelParse();
+    ModelParse(const ModelParse &) = delete;
+    ModelParse(ModelParse &&) noexcept = delete;
+    ModelParse &operator=(const ModelParse &) = delete;
+    ModelParse &operator=(ModelParse &&) noexcept = delete;
+
+    void parsing (const char *filename);
+
+    inline void set_file_path (const char *path)
+    {
+        file_path = path;
+    }
+
+    inline void set_callback_progressbar (CallbackProgressBar clb_progress)
+    {
+        if (context)
+        {
+            context->clbs.clb_progress = clb_progress;
+        }
     }
 
     inline const char *get_delimiter () const
     {
-        return csv.delimiter;
+        return context ? context->csv.delimiter : nullptr;
     }
 
     inline void set_delimiter (const char *delim)
     {
-        csv.delimiter = delim;
+        if (context)
+        {
+            context->csv.delimiter = delim;
+        }
     }
 
     inline uint16_t get_nums_field () const
     {
-        return csv.nums_field;
+        return context ? context->csv.nums_field : 0;
     }
 
     inline void set_nums_field (uint16_t nums)
     {
-        csv.nums_field = nums;
+        if (context)
+        {
+            context->csv.nums_field = nums;
+        }
     }
 
     // set callback записи в массив структур
     inline void set_callback_write (CallbackWriteToArray clb_w)
     {
-        context.clbs.clb_write_to_arr = clb_w;
-    }
-
-    // set callback прогрессбара
-    inline void set_callback_progressbar (CallbackProgressBar clb_progress)
-    {
-        context.clbs.clb_progress = clb_progress;
+        if (context)
+        {
+            context->clbs.clb_write_to_arr = clb_w;
+        }
     }
 
     inline IStorage_t *get_array () const
     {
-        return context.array;
+        return context ? context->array : nullptr;
     }
 
     inline void set_array (IStorage_t *arr)
     {
-        context.array = arr;
+        if (context)
+        {
+            context->array = arr;
+        }
     }
 
     inline IStorage_t *get_errors_parse () const
     {
-        return context.errors_parse;
+        return context ? context->errors_parse : nullptr;
     }
 
     inline void set_errors_parse (IStorage_t *errors)
     {
-        context.errors_parse = errors;
-    }
-    
-    inline size_t get_file_size () const
-    {
-        return context.file_size;
+        if (context)
+        {
+            context->errors_parse = errors;
+        }
     }
 
-    inline void set_file_size (size_t size)
+    inline int64_t get_file_size () const
     {
-        context.file_size = size;
+        return context ? context->file_size : 0;
+    }
+
+    inline void set_file_size (int64_t size)
+    {
+        if (context)
+        {
+            context->file_size = size;
+        }
+    }
+
+    inline const char *get_file_path () const
+    {
+        return file_path.c_str();
     }
 };
-
-//////////////////// Базовый класс для модели/ей ////////////////////////////////////////
-/**
- * Добавить подписчика
- */
-void InterfacesApp::Observable::add_observer (Observer *o)
-{
-    if (o)
-    {
-        observers.push_back(o);
-    }
-};
-
-/**
- * Убрать подписчика
- */
-void InterfacesApp::Observable::remove_observer (Observer *o)
-{
-    observers.erase(
-        std::remove(observers.begin(), observers.end(), o), observers.end()
-    );
-};
-
-/**
- * Уведомить всех подписчиков об изменении.
- * protected. Метод доступен только наследникам (например, FileModel)
- */
-void InterfacesApp::Observable::notify_observers 
-(const std::any &data, const AppError* error = nullptr)
-{
-    for (auto *obs : observers)
-    {
-        obs->on_model_changed(data, error);
-    }
-};
-
 
 } // namespace ModelApp

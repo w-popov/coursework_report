@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "interfaces.hpp"
 
 namespace ViewApp { class View; }

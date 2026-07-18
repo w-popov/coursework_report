@@ -48,6 +48,7 @@ AppController::AppController
                 const char *path = model->get_file_path(); 
                 if (path && path[0] != '\0')
                 {
+                    v->clear_table(v->window->table_parse);
                     v->window->btn_parse_csv->deactivate();
                     model->parsing(path);
                     v->window->btn_parse_csv->activate();

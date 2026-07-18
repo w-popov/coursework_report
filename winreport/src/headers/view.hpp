@@ -22,13 +22,13 @@ class DataTable : public Fl_Table
 {
 private:
     IStorage_t* datasource = nullptr;
-    void resize(int X, int Y, int W, int H) override;
-
-public:
+    
+    public:
     DataTable(int X, int Y, int W, int H, const char *L = 0);
-
+    
     // Метод для обновления данных из Observer
     void set_data(IStorage_t* data);
+    void resize(int X, int Y, int W, int H) override;
     
 protected:
     // Главный метод отрисовки ячеек
@@ -112,6 +112,8 @@ class View : public InterfacesApp::Observer
 
       void show_widget(Fl_Widget*, Fl_Flex*);
       void hide_widget(Fl_Widget*, Fl_Flex*);
+      void clear_table(Fl_Table *table);
+
 };
 
 } // namespace ViewApp

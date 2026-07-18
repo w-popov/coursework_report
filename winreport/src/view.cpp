@@ -16,11 +16,19 @@ DataTable::DataTable(int X, int Y, int W, int H, const char *L)
     rows(0);
     cols(7);
     col_header(1);      
-    scrollbar_size(16); 
+    col_header_height(25); 
+    type(Fl_Scroll::BOTH);  
+    scrollbar_size(16);
     row_height_all(25);  
-    col_width_all(80);  
-    type(Fl_Scroll::BOTH);
+    col_width_all(80);
+
+    begin();
+    box(FL_THIN_DOWN_FRAME);
+    color(FL_WHITE);
+    selection_color(fl_rgb_color(51, 153, 255));
     end();
+    
+    init_sizes();
 };
 
 void ViewApp::DataTable::set_data(IStorage_t* data)
@@ -34,20 +42,21 @@ void ViewApp::DataTable::set_data(IStorage_t* data)
     {
         rows(0);
     }
-    this->recalc_dimensions(); 
     this->init_sizes(); 
-    this->redraw(); 
+    this->recalc_dimensions(); 
+    this->redraw();
 };
 
 void DataTable::resize(int X, int Y, int W, int H)
 {
     Fl_Table::resize(X, Y, W, H); 
-    this->table_resized();  
+    this->recalc_dimensions();
+    this->table_resized(); 
 };
 
 void DataTable::draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H)
 {
-    static char buffer[64];
+    static char buffer[64]; 
 
     switch (context)
     {
@@ -56,52 +65,70 @@ void DataTable::draw_cell(TableContext context, int R, int C, int X, int Y, int 
             break;
 
         case CONTEXT_COL_HEADER: 
+        {
+            if (W <= 0 || H <= 0) break;
+            
             fl_push_clip(X, Y, W, H);
             fl_draw_box(FL_THIN_UP_BOX, X, Y, W, H, FL_BACKGROUND_COLOR);
             fl_color(FL_BLACK);
-            if (C == 0) fl_draw("№", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 1) fl_draw("Год", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 2) fl_draw("Месяц", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 3) fl_draw("День", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 4) fl_draw("Час", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 5) fl_draw("Мин.", X, Y, W, H, FL_ALIGN_CENTER);
-            if (C == 6) fl_draw("T (°C)", X, Y, W, H, FL_ALIGN_CENTER);
+            
+            const char* headers[] = {"№", "Год", "Месяц", "День", 
+                                     "Час", "Мин.", "T (°C)"};
+            if (C >= 0 && C < 7)
+            {
+                fl_draw(headers[C], X, Y, W, H, FL_ALIGN_CENTER);
+            }
             
             fl_pop_clip();
             break;
+        }
 
         case CONTEXT_CELL: 
         { 
+            if (R < 0 || C < 0 || R >= rows() || C >= cols() || W <= 0 || H <= 0) 
+            {
+                break;
+            }
+            
             fl_push_clip(X, Y, W, H);
             fl_color(FL_WHITE);
             fl_rectf(X, Y, W, H);
-            fl_color(FL_LIGHT2); 
+            fl_color(fl_rgb_color(220, 220, 220));
+            fl_line_style(FL_SOLID, 1);
             fl_rect(X, Y, W, H);
-            fl_color(FL_BLACK); 
-            if (datasource) 
+            
+            if (datasource && R >= 0 && R < (int)datasource->size(datasource)) 
             {
                 struct TemperatureStats* tarr = (struct TemperatureStats*)datasource->raw_data(datasource);
-                if (tarr && R < (int)datasource->size(datasource)) 
+                
+                if (tarr) 
                 {
-                    buffer[0] = '\0'; 
-                    if (C == 0) sprintf(buffer, "%d", R + 1);
-                    if (C == 1) sprintf(buffer, "%u", tarr[R].year); 
-                    if (C == 2) sprintf(buffer, "%u", tarr[R].month);
-                    if (C == 3) sprintf(buffer, "%u", tarr[R].day); 
-                    if (C == 4) sprintf(buffer, "%u", tarr[R].hours); 
-                    if (C == 5) sprintf(buffer, "%u", tarr[R].minutes);
-                    if (C == 6) sprintf(buffer, "%d", tarr[R].temperature); 
-
-                    fl_draw(buffer, X + 4, Y, W - 8, H, FL_ALIGN_LEFT);
+                    buffer[0] = '\0';
+                    
+                    switch(C) {
+                        case 0: snprintf(buffer, sizeof(buffer), "%d", R + 1); break;
+                        case 1: snprintf(buffer, sizeof(buffer), "%u", tarr[R].year); break;
+                        case 2: snprintf(buffer, sizeof(buffer), "%u", tarr[R].month); break;
+                        case 3: snprintf(buffer, sizeof(buffer), "%u", tarr[R].day); break;
+                        case 4: snprintf(buffer, sizeof(buffer), "%u", tarr[R].hours); break;
+                        case 5: snprintf(buffer, sizeof(buffer), "%u", tarr[R].minutes); break;
+                        case 6: snprintf(buffer, sizeof(buffer), "%d", tarr[R].temperature); break;
+                    }
+                    
+                    fl_color(FL_BLACK);
+                    fl_draw(buffer, X + 4, Y, W - 8, H, FL_ALIGN_CENTER);
                 }
             }
+            
             fl_pop_clip();
             break;
         }
+        
         default:
             break;
     }
 };
+
 
 
 AppWindow::AppWindow(int width, int height, const char *title)
@@ -167,15 +194,10 @@ void AppWindow::init_layout()
     {
         flex_table_container = new Fl_Flex(0, 0, 100, 100);
         flex_table_container->type(Fl_Flex::VERTICAL);
-        flex_table_container->margin(0, 0, 0, 0);
-        
-        table_parse = new DataTable(0, 0, 100, 100); 
-        table_parse->box(FL_FLAT_BOX);
-        table_parse->color(FL_WHITE);
-        
+        flex_table_container->margin(2, 2, 2, 2); 
+        table_parse = new DataTable(0, 0, 100, 100);
         table_parse->hide();
-        table_parse->end(); 
-        
+        flex_table_container->resizable(table_parse);
         flex_table_container->end();
     }
 
@@ -224,6 +246,7 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
         try 
         {
             current_dataset = std::any_cast<IStorage_t*>(data);
+            window->table_parse->redraw();
         }
         catch (const std::bad_any_cast& e) 
         {
@@ -297,10 +320,16 @@ void View::handle_print_all()
 {
     if (window && current_dataset && current_dataset->size(current_dataset) > 0)
     {
-        window->flex_table_container->show();
+        window->table_parse->set_data(current_dataset);
         window->table_parse->show();
         window->main_flex->layout(); 
-        window->table_parse->set_data(current_dataset);
+        static_cast<Fl_Widget*>(window->table_parse)->resize(
+            window->table_parse->x(), 
+            window->table_parse->y(), 
+            window->table_parse->w(), 
+            window->table_parse->h()
+        );
+        window->table_parse->redraw();
     }
     else
     {
@@ -352,8 +381,16 @@ void View::update_progress_bar_value(int64_t current, int64_t total)
 void View::show_widget(Fl_Widget* w, Fl_Flex* f)
 {
     if (window)
-    {   w->show();
+    {   
+        w->show();
         f->layout();
+        if (window->table_parse && window->table_parse->visible())
+        {
+            window->table_parse->resize(
+                window->table_parse->x(), window->table_parse->y(),
+                window->table_parse->w(), window->table_parse->h()
+            );
+        }
         window->redraw();
     }
     Fl::flush();
@@ -362,11 +399,32 @@ void View::show_widget(Fl_Widget* w, Fl_Flex* f)
 void View::hide_widget(Fl_Widget* w, Fl_Flex* f)
 {
     if (window)
-    {   w->hide();
+    {   
+        w->hide();
         f->layout();
+        if (window->table_parse && window->table_parse->visible())
+        {
+            window->table_parse->resize(
+                window->table_parse->x(), window->table_parse->y(),
+                window->table_parse->w(), window->table_parse->h()
+            );
+        }
         window->redraw();
     }
     Fl::flush();
-}
+};
+
+void View::clear_table(Fl_Table *table_parse)
+{
+    if (window && table_parse)
+    {
+        window->table_parse->set_data(nullptr);
+        window->table_parse->hide();
+        window->flex_table_container->layout();
+        window->main_flex->layout();
+        window->redraw();
+        current_dataset = nullptr;
+    }
+};
 
 } // namespace ViewApp

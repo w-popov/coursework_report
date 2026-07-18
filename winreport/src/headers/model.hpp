@@ -4,6 +4,7 @@
 #include <vector>
 #include <any>
 #include "interfaces.hpp"
+#include "temp_api.h"
 #include "parser_csv.h"
 
 namespace ModelApp
@@ -67,6 +68,8 @@ class ModelParse : public Observable
     struct IStorage_t *errors_array = nullptr;
     struct ContextParser *context = nullptr;
     struct ParseSource *parse_source = nullptr;
+    struct Statistics stats = {};
+    struct Statistics *pstats = nullptr;
     std::string file_path;
 
   public:
@@ -183,6 +186,7 @@ class ModelParse : public Observable
     void model_init();
     void model_free();
     void storages_clear();
+    void statistics();
 };
 
 } // namespace ModelApp

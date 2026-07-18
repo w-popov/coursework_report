@@ -14,6 +14,7 @@ ModelParse::~ModelParse()
 
 void ModelParse::model_init()
 {
+    stats = {};
     array = svector_init((struct IStorage_t *)&array_vec, sizeof(struct TemperatureStats), 0);
     errors_array = svector_init((struct IStorage_t *)&err_array_vec, sizeof(struct ErrorParse), 0);
     context = new struct ContextParser;
@@ -82,6 +83,14 @@ void ModelParse::storages_clear()
         context->csv.length_field = 0;
         memset(context->csv.buffer, '\0', MAX_FIELD_SIZE);
     }
+};
+
+void ModelParse::statistics()
+{
+    struct TemperatureStats *tarr =  (struct TemperatureStats *)array->raw_data(array);
+    stats = calculate_statistics(tarr, array->size(array));
+    pstats = &stats;
+    notify(pstats, InterfacesApp::DataType::AverageTable);
 };
 
 void ModelParse::parsing(const char* filename)

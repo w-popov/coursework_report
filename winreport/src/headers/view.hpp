@@ -11,8 +11,10 @@
 #include <functional>
 #include <any>
 #include <cstdint> 
+#include <string>
 #include "interfaces.hpp" 
 #include "parser_csv.h"
+#include "temp_api.h"
 
 namespace ViewApp
 {
@@ -33,7 +35,24 @@ private:
 protected:
     // Главный метод отрисовки ячеек
     void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override; 
+};
+
+
+class StatsTable : public Fl_Table 
+{
+private:
+    struct Statistics *datasource = nullptr; 
+    std::vector<std::string> column_headers;
     
+public:
+    StatsTable(int X, int Y, int W, int H, const char *L = 0);
+    
+    void set_data(struct Statistics *stats); 
+    void clear_data();
+    void resize(int X, int Y, int W, int H) override;
+    
+protected:
+    void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override;
 };
 
 
@@ -54,6 +73,7 @@ class AppWindow : public Fl_Double_Window
 
     Fl_Flex *flex_table_container;
     DataTable *table_parse;
+    StatsTable *table_statistics;
 
     Fl_Flex *flex_bottom_status;
     Fl_Box *lbl_file_name;
@@ -69,15 +89,19 @@ class View : public InterfacesApp::Observer
 {
     private:
       IStorage_t *current_dataset = nullptr;
+      struct Statistics *datasource = nullptr;
+      uint16_t monthstats = 0;
     public:
-      /* Эти функции вызовет контроллер */
+      /* Эти функции вызовет контроллер для связи с моделью */
       std::function<void(const char* path)> on_file_selected = nullptr;
       std::function<void()> on_start_parsing = nullptr;
+      std::function<void()> on_start_stats = nullptr;
 
       /* Вызывают колбэки кнопок */
       void handle_open_file ();
       void handle_parse_csv ();
       void handle_print_all();
+      void handle_print_report();
 
       void set_status_file (const char *name);
       void update_progress_bar_value (int64_t current, int64_t total);
@@ -103,6 +127,13 @@ class View : public InterfacesApp::Observer
           static_cast<View *>(data)->handle_print_all();
       }
 
+      // колбэк кнопки Отчет
+      static void clb_report (Fl_Widget *w, void *data)
+      {
+          (void)w;
+          static_cast<View *>(data)->handle_print_report();
+      }
+
       AppWindow *window = nullptr; 
 
       virtual ~View() = default;
@@ -112,7 +143,8 @@ class View : public InterfacesApp::Observer
 
       void show_widget(Fl_Widget*, Fl_Flex*);
       void hide_widget(Fl_Widget*, Fl_Flex*);
-      void clear_table(Fl_Table *table);
+      void clear_table_parse();
+      void clear_table_stats();
 
 };
 

@@ -48,7 +48,8 @@ AppController::AppController
                 const char *path = model->get_file_path(); 
                 if (path && path[0] != '\0')
                 {
-                    v->clear_table(v->window->table_parse);
+                    v->clear_table_parse();
+                    v->clear_table_stats();
                     v->window->btn_parse_csv->deactivate();
                     model->parsing(path);
                     v->window->btn_parse_csv->activate();
@@ -57,6 +58,15 @@ AppController::AppController
                 {
                     fl_alert("Внимание: Сначала выберите файл через кнопку 'Файл'!");
                 }
+            }
+        };
+
+        // колбэк получить статистику за год/месяц
+        view->on_start_stats = [model]()
+        {
+            if (model)
+            {
+                model->statistics();
             }
         };
     }

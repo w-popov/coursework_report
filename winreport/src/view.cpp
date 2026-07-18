@@ -10,6 +10,162 @@
 namespace ViewApp
 {
 
+StatsTable::StatsTable(int X, int Y, int W, int H, const char *L)
+    : Fl_Table(X, Y, W, H, L)
+{
+    rows(0);
+    cols(4);
+    col_header(1);      
+    col_header_height(30); 
+    type(Fl_Scroll::BOTH);  
+    scrollbar_size(16);
+    row_height_all(35);  
+    col_width_all(120);
+
+    begin();
+    box(FL_THIN_DOWN_FRAME);
+    color(FL_WHITE);
+    selection_color(fl_rgb_color(51, 153, 255));
+    end();
+    
+    init_sizes();
+};
+
+void StatsTable::set_data(struct Statistics *data)
+{
+    datasource = data;
+    rows(13);
+    this->init_sizes(); 
+    this->recalc_dimensions(); 
+    this->redraw();
+};
+
+void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H)
+{
+    static const char* month_names[] = {
+        "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+        "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+    };
+    column_headers = {"Месяц", "Средняя T(°C)", "Мин. T(°C)", "Макс. T(°C)"};
+    static char buffer[32];
+
+    switch (context)
+    {
+        case CONTEXT_STARTPAGE: 
+            fl_font(FL_HELVETICA, 12);
+            break;
+
+        case CONTEXT_COL_HEADER: 
+        {
+            if (W <= 0 || H <= 0) break;
+            
+            fl_push_clip(X, Y, W, H);
+            fl_draw_box(FL_THIN_UP_BOX, X, Y, W, H, fl_rgb_color(200, 220, 255));
+            fl_color(FL_DARK_BLUE);
+            fl_font(FL_HELVETICA_BOLD, 12);
+            
+            if (C >= 0 && C < (int)column_headers.size())
+            {
+                fl_draw(column_headers[C].c_str(), X, Y, W, H, FL_ALIGN_CENTER);
+            }
+            
+            fl_pop_clip();
+            break;
+        }
+
+        case CONTEXT_CELL: 
+        { 
+            if (R < 0 || C < 0 || R >= rows() || C >= cols() || W <= 0 || H <= 0) {
+                break;
+            }
+            
+            fl_push_clip(X, Y, W, H);
+            
+            bool is_total = (R == 12);
+            
+            fl_color(FL_WHITE);
+            fl_rectf(X, Y, W, H);
+            
+            // Сетка
+            fl_color(fl_rgb_color(180, 200, 230));
+            fl_line_style(FL_SOLID, is_total ? 2 : 1);
+            fl_rect(X, Y, W, H);
+            fl_line_style(FL_SOLID, 1);
+            
+            buffer[0] = '\0';
+            
+            if (is_total)
+            {
+                // Итоговая строка
+                switch(C) 
+                {
+                    case 0: snprintf(buffer, sizeof(buffer), "YEAR TOTAL"); break;
+                    case 1: snprintf(buffer, sizeof(buffer), "%d", datasource->avg_year); break;
+                    case 2: snprintf(buffer, sizeof(buffer), "%d", datasource->min_temp_year); break;
+                    case 3: snprintf(buffer, sizeof(buffer), "%d", datasource->max_temp_year); break;
+                }
+                fl_font(FL_HELVETICA_BOLD, 12);
+                fl_color(FL_DARK_BLUE);
+            } 
+            else 
+            {
+                // Данные за месяц
+                switch(C) {
+                    case 0: 
+                        snprintf(buffer, sizeof(buffer), "%s", month_names[R]); 
+                        break;
+                    case 1: 
+                        if (datasource->months[R].avg_temp == INT16_MIN)
+                            snprintf(buffer, sizeof(buffer), "-");
+                        else
+                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].avg_temp);
+                        break;
+                    case 2: 
+                        if (datasource->months[R].min_temp == INT16_MIN)
+                            snprintf(buffer, sizeof(buffer), "-");
+                        else
+                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].min_temp);
+                        break;
+                    case 3: 
+                        if (datasource->months[R].max_temp == INT16_MIN)
+                            snprintf(buffer, sizeof(buffer), "-");
+                        else
+                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].max_temp);
+                        break;
+                }
+                fl_font(FL_HELVETICA, 12);
+                fl_color(FL_BLACK);
+            }
+            
+            if (buffer[0] != '\0')
+            {
+                fl_draw(buffer, X, Y, W, H, FL_ALIGN_CENTER);
+            }
+            
+            fl_pop_clip();
+            break;
+        }
+        
+        default:
+            break;
+    }
+};
+
+void StatsTable::clear_data()
+{
+    datasource = nullptr;
+    rows(0);
+    redraw();
+};
+
+void StatsTable::resize(int X, int Y, int W, int H)
+{
+    Fl_Table::resize(X, Y, W, H); 
+    this->recalc_dimensions();
+    this->table_resized(); 
+};
+
+///////////////////////////////////////////////////////////////
 DataTable::DataTable(int X, int Y, int W, int H, const char *L) 
     : Fl_Table(X, Y, W, H, L) 
 { 
@@ -31,7 +187,7 @@ DataTable::DataTable(int X, int Y, int W, int H, const char *L)
     init_sizes();
 };
 
-void ViewApp::DataTable::set_data(IStorage_t* data)
+void DataTable::set_data(IStorage_t* data)
 {
     datasource = data;
     if (datasource)
@@ -187,6 +343,8 @@ void AppWindow::init_layout()
         flex_errors = new Fl_Flex(0, 0, 0, 100);
         browse_errs = new Fl_Browser(0, 0, 0, 100);
         browse_errs->textsize(12);
+        browse_errs->box(FL_FLAT_BOX);
+        flex_errors->box(FL_FLAT_BOX);
         flex_errors->end();
         flex_errors->hide();
     }
@@ -197,7 +355,10 @@ void AppWindow::init_layout()
         flex_table_container->margin(2, 2, 2, 2); 
         table_parse = new DataTable(0, 0, 100, 100);
         table_parse->hide();
+        table_statistics = new StatsTable(0, 0, 100, 100);
+        table_statistics->hide();
         flex_table_container->resizable(table_parse);
+        flex_table_container->resizable(table_statistics);
         flex_table_container->end();
     }
 
@@ -236,6 +397,7 @@ View::View(Fl_Double_Window *w) : window(static_cast<AppWindow*>(w))
     window->btn_open_file->callback(clb_open_file, this);
     window->btn_parse_csv->callback(clb_parse_csv, this);
     window->btn_all->callback(clb_all, this);
+    window->btn_report->callback(clb_report, this);
 }
 
 void View::update(const std::any &data, InterfacesApp::DataType datatype)
@@ -246,6 +408,8 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
         try 
         {
             current_dataset = std::any_cast<IStorage_t*>(data);
+            std::string msgtotalrow = "@C4Валидных строк: " + std::to_string(current_dataset->size(current_dataset));
+            window->browse_errs->add(msgtotalrow.c_str());
             window->table_parse->redraw();
         }
         catch (const std::bad_any_cast& e) 
@@ -261,6 +425,8 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
             auto errors = std::any_cast<IStorage_t*>(data);
             size_t size = errors->size(errors);
             window->browse_errs->clear();
+            std::string msgerrsize = "Ошибок: " + std::to_string(size);
+            window->browse_errs->add(msgerrsize.c_str());
             if (size > 0)
             {
                 window->flex_errors->show();
@@ -268,7 +434,8 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
                 for (size_t i = 0; i < size; ++i)
                 {
                     struct ErrorParse *item_err = (struct ErrorParse *)errors->get(errors, i);
-                    window->browse_errs->add(item_err->error_message);
+                    std::string msg = "@C1" + std::string(item_err->error_message);
+                    window->browse_errs->add(msg.c_str());
                     window->browse_errs->redraw();
                 }
             }
@@ -289,6 +456,16 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
         break;
 
     case InterfacesApp::DataType::AverageTable:
+        try 
+        {
+            datasource = std::any_cast<Statistics*>(data);
+            window->table_statistics->redraw();
+        }
+        catch (const std::bad_any_cast& e) 
+        {
+            datasource = nullptr;
+            printf("Type bad error\n");
+        }
         break;
     }
 };
@@ -316,11 +493,35 @@ void View::handle_open_file()
     }
 };
 
+void View::handle_print_report()
+{
+    if (on_start_stats)
+    {
+        on_start_stats();
+    }
+    if (window && datasource)
+    {
+        window->table_statistics->set_data(datasource);
+        window->table_parse->hide();
+        window->table_statistics->show();
+        window->main_flex->layout(); 
+        
+        window->table_statistics->redraw();
+    }
+    else
+    {
+        printf("EEERRRR view.cpp 503\n");
+        window->table_statistics->set_data(nullptr);
+        fl_alert("Нет данных для отображения! Сначала выберите файл и запустите парсинг.");
+    }
+};
+
 void View::handle_print_all()
 {
     if (window && current_dataset && current_dataset->size(current_dataset) > 0)
     {
         window->table_parse->set_data(current_dataset);
+        window->table_statistics->hide();
         window->table_parse->show();
         window->main_flex->layout(); 
         static_cast<Fl_Widget*>(window->table_parse)->resize(
@@ -414,9 +615,9 @@ void View::hide_widget(Fl_Widget* w, Fl_Flex* f)
     Fl::flush();
 };
 
-void View::clear_table(Fl_Table *table_parse)
+void View::clear_table_parse()
 {
-    if (window && table_parse)
+    if (window && window->table_parse)
     {
         window->table_parse->set_data(nullptr);
         window->table_parse->hide();
@@ -424,6 +625,19 @@ void View::clear_table(Fl_Table *table_parse)
         window->main_flex->layout();
         window->redraw();
         current_dataset = nullptr;
+    }
+};
+
+void View::clear_table_stats()
+{
+    if (window && window->table_statistics)
+    {
+        window->table_statistics->set_data(nullptr);
+        window->table_statistics->hide();
+        window->flex_table_container->layout();
+        window->main_flex->layout();
+        window->redraw();
+        datasource = nullptr;
     }
 };
 

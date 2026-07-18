@@ -179,6 +179,10 @@ class ModelParse : public Observable
     {
         return file_path.c_str();
     }
+
+    void model_init();
+    void model_free();
+    void storages_clear();
 };
 
 } // namespace ModelApp

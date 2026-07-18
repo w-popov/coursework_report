@@ -476,8 +476,7 @@ void show_errors (struct IStorage_t *storage, size_t rows)
         printf("Ошибок:...........%s%zu%s\n", RED, errnums, RESET);
         for (size_t i = 0; i < errnums; ++i)
         {
-            struct ErrorParse *item_err =
-                (struct ErrorParse *)storage->get(storage, i);
+            struct ErrorParse *item_err = (struct ErrorParse *)storage->get(storage, i);
             printf(RED "%s" RESET, item_err->error_message);
         }
     }

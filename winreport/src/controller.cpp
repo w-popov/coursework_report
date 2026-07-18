@@ -21,14 +21,11 @@ void AppController::progress_bridge(void* self, int64_t current, int64_t total)
 AppController::AppController
 (ViewApp::View *v, ModelApp::ModelParse *model) : view(v), model(model)
 {
-    model->add_observer(view);
-
     if (view && model)
     {
+        model->add_observer(view);
         model->set_callback_context(view);
         model->set_callback_progressbar(progress_bridge);
-
-        model->add_observer(view);
 
         // колбэк : отдать модели путь выбранного файла
         view->on_file_selected = [model](const char *path)
@@ -44,20 +41,16 @@ AppController::AppController
         {
             if (v && v->window)
             {
-                v->window->progress_bar->show();
-                if (v->window->flex_bottom_status) 
-                {
-                    v->window->flex_bottom_status->layout();
-                    v->window->redraw();
-                }
-                Fl::flush(); 
+                v->show_widget(v->window->progress_bar, v->window->flex_bottom_status);
             } 
             if (model)
             {
                 const char *path = model->get_file_path(); 
                 if (path && path[0] != '\0')
                 {
+                    v->window->btn_parse_csv->deactivate();
                     model->parsing(path);
+                    v->window->btn_parse_csv->activate();
                 }
                 else
                 {

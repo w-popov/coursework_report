@@ -25,7 +25,7 @@ void seticon (Fl_Window *win)
 int main (int argc, char **argv)
 {
     Fl::scheme("gtk+");
-    auto* window = new ViewApp::AppWindow(650, 550, "appreport Курсовая.");
+    auto* window = new ViewApp::AppWindow(750, 580, "appreport Курсовая.");
     auto* view = new ViewApp::View(window);
     auto* model = new ModelApp::ModelParse();
     auto* controller = new ControllerApp::AppController(view, model);

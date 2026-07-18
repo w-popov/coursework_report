@@ -307,25 +307,25 @@ void AppWindow::init_layout()
     main_flex->gap(10);
 
     {
-        flex_top_buttons = new Fl_Flex(0, 0, 0, 40);
+        flex_top_buttons = new Fl_Flex(0, 0, 0, 30);
         flex_top_buttons->type(Fl_Flex::HORIZONTAL);
 
-        btn_open_file = new Fl_Button(0, 0, 80, 40, "Файл");
+        btn_open_file = new Fl_Button(0, 0, 80, 30, "Файл");
         btn_open_file->labelsize(12);
 
-        btn_parse_csv = new Fl_Button(0, 0, 80, 40, "Парсинг");
+        btn_parse_csv = new Fl_Button(0, 0, 80, 30, "Парсинг");
         btn_parse_csv->labelsize(12);
 
-        btn_report = new Fl_Button(0, 0, 80, 40, "Отчет");
+        btn_report = new Fl_Button(0, 0, 80, 30, "Отчет");
         btn_report->labelsize(12);
 
-        btn_all = new Fl_Button(0, 0, 80, 40, "Данные");
+        btn_all = new Fl_Button(0, 0, 80, 30, "Данные");
         btn_all->labelsize(12);
 
-        btn_save = new Fl_Button(0, 0, 80, 40, "В .html");
+        btn_save = new Fl_Button(0, 0, 80, 30, "В .html");
         btn_save->labelsize(12);
 
-        btn_exit = new Fl_Button(0, 0, 80, 40, "Выход");
+        btn_exit = new Fl_Button(0, 0, 80, 30, "Выход");
         btn_exit->labelsize(12);
 
         flex_top_buttons->gap(10);

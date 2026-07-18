@@ -14,7 +14,7 @@ void push_error (struct ContextParser *context, ErrorInfo err)
     {
     case ERR_VALIDATE:
         snprintf(error.error_message, LEN_ERR_MSG,
-                 "Ошибка валидации: Строка %zu, Колонка %d. Неверный формат "
+                 "Ошибка валидации: Строка %zu, Колонка %d. Не верный формат "
                  "данных: \"%s\"\n",
                  context->csv.current_row + 1, context->csv.current_column + 1,
                  context->csv.buffer);

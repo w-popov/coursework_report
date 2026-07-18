@@ -25,6 +25,7 @@ void seticon (Fl_Window *win)
 int main (int argc, char **argv)
 {
     Fl::scheme("gtk+");
+    Fl::set_font(FL_FREE_FONT + 1, "Segoe UI");
     auto* window = new ViewApp::AppWindow(800, 640, "appreport Курсовая.");
     auto* view = new ViewApp::View(window);
     auto* model = new ModelApp::ModelParse();

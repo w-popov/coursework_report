@@ -14,7 +14,6 @@ endif
 # Имена исполняемых файлов
 TARGET = report
 WIN_TARGET = appreport
-TEST_TARGET = test
 
 # Исходные каталоги проекта
 SRC_DIR = src
@@ -22,10 +21,6 @@ GUI_SRC_DIR = winreport/src
 HEAD_DIR = $(SRC_DIR)/headers
 GUI_HEAD_DIR = $(GUI_SRC_DIR)/headers
 BUILD_BASE_DIR = build
-
-# Каталоги для тестов
-TEST_DIR = tests
-TEST_HEAD_DIR = $(TEST_DIR)/headers
 LIBS_DIR = libs
 
 # FLTK настройки
@@ -58,7 +53,7 @@ COMMON_FLAGS = $(CSTANDARD) -Wall -Wextra -Wpedantic -I$(HEAD_DIR) -MMD -MP
 # Настройка путей и флагов в зависимости от выбранного режима
 ifeq ($(DEBUG), 1)
     CFLAGS = $(COMMON_FLAGS) -g -O0 -DDEBUG
-    CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 -I$(TEST_HEAD_DIR) -I$(HEAD_DIR) -DDEBUG
+    CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 -I$(HEAD_DIR) -DDEBUG
     
     # FLTK флаги для Debug
     GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 \
@@ -78,7 +73,7 @@ ifeq ($(DEBUG), 1)
     endif
 else
     CFLAGS = $(COMMON_FLAGS) -O3 -flto -DNDEBUG
-    CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto -I$(TEST_HEAD_DIR) -I$(HEAD_DIR) -DNDEBUG
+    CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto -I$(HEAD_DIR) -DNDEBUG
     
     # FLTK флаги для Release
     GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto \
@@ -125,23 +120,15 @@ OBJS_WITHOUT_MAIN = $(filter-out $(OBJ_DIR)/main.o, $(OBJS))
 GUI_SRCS = $(wildcard $(GUI_SRC_DIR)/*.cpp)
 GUI_OBJS = $(patsubst $(GUI_SRC_DIR)/%.cpp, $(GUI_OBJ_DIR)/%.o, $(GUI_SRCS))
 
-# Поиск файлов тестов (*.cpp), исключая catch_module.cpp
-TEST_SRCS = $(filter-out $(TEST_DIR)/catch_module.cpp, $(wildcard $(TEST_DIR)/*.cpp))
-TEST_OBJS = $(patsubst $(TEST_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(TEST_SRCS))
-
 # Автоматическая генерация зависимостей (.d)
-DEPS = $(OBJS:.o=.d) $(TEST_OBJS:.o=.d) $(GUI_OBJS:.o=.d) $(CATCH_MODULE_OBJ:.o=.d)
-
-# Путь к скомпилированной библиотеке Catch
-CATCH_MODULE_OBJ = $(LIB_OBJ_DIR)/catch_module.o
+DEPS = $(OBJS:.o=.d) $(GUI_OBJS:.o=.d)
 
 # Финальные пути к исполняемым файлам
 EXEC_TARGET = $(EXECUTE_DIR)/$(TARGET)
 EXEC_GUI_TARGET = $(EXECUTE_DIR)/$(WIN_TARGET)
-EXEC_TEST_TARGET = $(EXECUTE_DIR)/$(TEST_TARGET)
 
 # Главная цель — собирает консольную версию и тесты
-all: $(EXEC_TARGET) $(EXEC_TEST_TARGET)
+all: $(EXEC_TARGET)
 	@echo "The build is complete. For the GUI, use: make winreport"
 
 # Цель для GUI
@@ -166,10 +153,6 @@ $(EXEC_GUI_TARGET): $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) | $(EXECUTE_DIR)
 	@echo "GUI copy app: $(WIN_TARGET)"
 endif
 
-# Линковка тестов
-$(EXEC_TEST_TARGET): $(CATCH_MODULE_OBJ) $(TEST_OBJS) | $(EXECUTE_DIR)
-	$(CXX) $(CXXFLAGS) $(CATCH_MODULE_OBJ) $(TEST_OBJS) -o $(EXEC_TEST_TARGET) $(LDFLAGS)
-
 # Компиляция .c файлов проекта
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -178,20 +161,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 $(GUI_OBJ_DIR)/%.o: $(GUI_SRC_DIR)/%.cpp | $(GUI_OBJ_DIR)
 	$(CXX) $(GUI_CXXFLAGS) -c $< -o $@
 
-# Компиляция .cpp файлов тестов
-$(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 # Ресурсы консольного приложения (Windows)
 ifneq ($(IS_WINDOWS), 0)
 $(GUI_RES_OBJ): $(GUI_RES_FILE) | $(GUI_RES_OBJ_DIR)
 	$(WINDRES) $< -o $@
 endif
-
-# Сборка Catch
-$(CATCH_MODULE_OBJ): $(TEST_DIR)/catch_module.cpp $(TEST_HEAD_DIR)/catch.hpp | $(LIB_OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(FLTK_PREFIX)/lib/libfltk.a:
 	@echo "==> FLTK not found, downloading and compiling..."
@@ -235,7 +209,6 @@ clean:
 # Очистка FLTK
 clean-fltk:
 	rm -rf $(FLTK_PREFIX)
-
 
 # Подключение сгенерированных файлов зависимостей
 -include $(DEPS)

@@ -18,7 +18,8 @@
 
 namespace ViewApp
 {
-
+class DataTable;
+class StatsTable;
 
 class DataTable : public Fl_Table 
 {

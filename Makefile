@@ -230,7 +230,7 @@ endif
 # Полная очистка
 clean:
 	rm -rf $(BUILD_BASE_DIR)
-	rm -f ./$(TARGET) ./$(WIN_TARGET)
+	rm -f ./$(TARGET) ./$(WIN_TARGET) *.html
 
 # Очистка FLTK
 clean-fltk:

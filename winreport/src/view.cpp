@@ -34,7 +34,15 @@ StatsTable::StatsTable(int X, int Y, int W, int H, const char *L)
 void StatsTable::set_data(struct Statistics *data)
 {
     datasource = data;
-    rows(13);
+    datasource = data;
+    
+    if (is_total) 
+    {
+        rows(13);  
+    } else 
+    {
+        rows(1);  
+    }
     this->init_sizes(); 
     this->recalc_dimensions(); 
     this->redraw();
@@ -46,7 +54,7 @@ void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int
         "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
         "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
     };
-    column_headers = {"Месяц", "Средняя T(°C)", "Мин. T(°C)", "Макс. T(°C)"};
+    static const char* headers[] = {"Месяц", "Средняя T(°C)", "Мин. T(°C)", "Макс. T(°C)"};
     static char buffer[32];
 
     switch (context)
@@ -64,9 +72,9 @@ void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int
             fl_color(FL_DARK_BLUE);
             fl_font(FL_HELVETICA_BOLD, 12);
             
-            if (C >= 0 && C < (int)column_headers.size())
+            if (C >= 0 && C < 4)
             {
-                fl_draw(column_headers[C].c_str(), X, Y, W, H, FL_ALIGN_CENTER);
+                fl_draw(headers[C], X, Y, W, H, FL_ALIGN_CENTER);
             }
             
             fl_pop_clip();
@@ -75,20 +83,18 @@ void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int
 
         case CONTEXT_CELL: 
         { 
-            if (R < 0 || C < 0 || R >= rows() || C >= cols() || W <= 0 || H <= 0) {
+            if (!datasource || R < 0 || C < 0 || R >= rows() || C >= cols() || W <= 0 || H <= 0)
+            {
                 break;
             }
             
             fl_push_clip(X, Y, W, H);
             
-            bool is_total = (R == 12);
-            
             fl_color(FL_WHITE);
             fl_rectf(X, Y, W, H);
             
-            // Сетка
             fl_color(fl_rgb_color(180, 200, 230));
-            fl_line_style(FL_SOLID, is_total ? 2 : 1);
+            fl_line_style(FL_SOLID, 1);
             fl_rect(X, Y, W, H);
             fl_line_style(FL_SOLID, 1);
             
@@ -96,45 +102,86 @@ void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int
             
             if (is_total)
             {
-                // Итоговая строка
-                switch(C) 
+                // Все месяцы (12 строк + итог)
+                bool is_last_row = (R == 12);
+                
+                if (is_last_row)
                 {
-                    case 0: snprintf(buffer, sizeof(buffer), "YEAR TOTAL"); break;
-                    case 1: snprintf(buffer, sizeof(buffer), "%d", datasource->avg_year); break;
-                    case 2: snprintf(buffer, sizeof(buffer), "%d", datasource->min_temp_year); break;
-                    case 3: snprintf(buffer, sizeof(buffer), "%d", datasource->max_temp_year); break;
+                    // Итоговая строка
+                    switch(C) 
+                    {
+                        case 0: snprintf(buffer, sizeof(buffer), "YEAR TOTAL"); break;
+                        case 1: snprintf(buffer, sizeof(buffer), "%d", datasource->avg_year); break;
+                        case 2: snprintf(buffer, sizeof(buffer), "%d", datasource->min_temp_year); break;
+                        case 3: snprintf(buffer, sizeof(buffer), "%d", datasource->max_temp_year); break;
+                    }
+                    fl_font(FL_HELVETICA_BOLD, 12);
+                    fl_color(FL_DARK_BLUE);
                 }
-                fl_font(FL_HELVETICA_BOLD, 12);
-                fl_color(FL_DARK_BLUE);
-            } 
-            else 
+                else
+                {
+                    // Данные за месяц R (0-11)
+                    switch(C)
+                    {
+                        case 0: 
+                            snprintf(buffer, sizeof(buffer), "%s", month_names[R]); 
+                            break;
+                        case 1: 
+                            if (datasource->months[R].avg_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].avg_temp);
+                            break;
+                        case 2: 
+                            if (datasource->months[R].min_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].min_temp);
+                            break;
+                        case 3: 
+                            if (datasource->months[R].max_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].max_temp);
+                            break;
+                    }
+                    fl_font(FL_HELVETICA, 12);
+                    fl_color(FL_BLACK);
+                }
+            }
+            else
             {
-                // Данные за месяц
-                switch(C) {
-                    case 0: 
-                        snprintf(buffer, sizeof(buffer), "%s", month_names[R]); 
-                        break;
-                    case 1: 
-                        if (datasource->months[R].avg_temp == INT16_MIN)
-                            snprintf(buffer, sizeof(buffer), "-");
-                        else
-                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].avg_temp);
-                        break;
-                    case 2: 
-                        if (datasource->months[R].min_temp == INT16_MIN)
-                            snprintf(buffer, sizeof(buffer), "-");
-                        else
-                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].min_temp);
-                        break;
-                    case 3: 
-                        if (datasource->months[R].max_temp == INT16_MIN)
-                            snprintf(buffer, sizeof(buffer), "-");
-                        else
-                            snprintf(buffer, sizeof(buffer), "%d", datasource->months[R].max_temp);
-                        break;
+                // Один месяц - одна строка
+                int month_idx = month - 1;  // 0-11
+                
+                if (month_idx >= 0 && month_idx < 12)
+                {
+                    switch(C) {
+                        case 0: 
+                            snprintf(buffer, sizeof(buffer), "%s", month_names[month_idx]); 
+                            break;
+                        case 1: 
+                            if (datasource->months[month_idx].avg_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[month_idx].avg_temp);
+                            break;
+                        case 2: 
+                            if (datasource->months[month_idx].min_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[month_idx].min_temp);
+                            break;
+                        case 3: 
+                            if (datasource->months[month_idx].max_temp == INT16_MIN)
+                                snprintf(buffer, sizeof(buffer), "-");
+                            else
+                                snprintf(buffer, sizeof(buffer), "%d", datasource->months[month_idx].max_temp);
+                            break;
+                    }
+                    fl_font(FL_HELVETICA, 12);
+                    fl_color(FL_BLACK);
                 }
-                fl_font(FL_HELVETICA, 12);
-                fl_color(FL_BLACK);
             }
             
             if (buffer[0] != '\0')
@@ -165,7 +212,70 @@ void StatsTable::resize(int X, int Y, int W, int H)
     this->table_resized(); 
 };
 
-///////////////////////////////////////////////////////////////
+bool StatsTable::is_valid_month()
+{
+    return month > 0 && month <= 12;
+};
+
+/**
+ * Выбор месяца 
+ */
+void StatsTable::show_month_dialog() 
+{
+    //модальное окно
+    Fl_Window *dialog = new Fl_Window(300, 105, "Выбор месяца");
+    dialog->set_modal();
+    Fl_Choice *month_choice = new Fl_Choice(80, 20, 200, 25, "Месяц:");
+    month_choice->add("Январь");
+    month_choice->add("Февраль");
+    month_choice->add("Март");
+    month_choice->add("Апрель");
+    month_choice->add("Май");
+    month_choice->add("Июнь");
+    month_choice->add("Июль");
+    month_choice->add("Август");
+    month_choice->add("Сентябрь");
+    month_choice->add("Октябрь");
+    month_choice->add("Ноябрь");
+    month_choice->add("Декабрь");
+    month_choice->value(0);
+
+    int selected_month = 0;
+
+    Fl_Button *btn_ok = new Fl_Button(80, 65, 90, 25, "OK");
+    btn_ok->callback(
+        [](Fl_Widget* w, void* data)
+        {
+            int* res = (int*)data;
+            Fl_Choice* choice = (Fl_Choice*)w->parent()->child(0);
+            *res = choice->value() + 1; 
+            w->parent()->hide();
+        }, 
+    &selected_month);
+
+    Fl_Button *btn_cancel = new Fl_Button(190, 65, 90, 25, "Отмена");
+    btn_cancel->callback(
+        [](Fl_Widget* w, void* data) 
+        {
+            int* res = (int*)data;
+            *res = 0;
+            w->parent()->hide();
+        }, 
+    &selected_month);
+
+    dialog->end();
+    dialog->show();
+
+    while (dialog->shown())
+    {
+        Fl::wait();
+    }
+
+    delete dialog; 
+    month = selected_month;
+};
+
+////////////////////// Вся таблица ////////////////////////////////
 DataTable::DataTable(int X, int Y, int W, int H, const char *L) 
     : Fl_Table(X, Y, W, H, L) 
 { 
@@ -319,6 +429,9 @@ void AppWindow::init_layout()
         btn_report = new Fl_Button(0, 0, 80, 30, "Отчет");
         btn_report->labelsize(12);
 
+        btn_report_month = new Fl_Button(0, 0, 120, 30, "Отчет за месяц");
+        btn_report_month->labelsize(12);
+
         btn_all = new Fl_Button(0, 0, 80, 30, "Данные");
         btn_all->labelsize(12);
 
@@ -332,6 +445,7 @@ void AppWindow::init_layout()
         flex_top_buttons->fixed(btn_open_file, 80);
         flex_top_buttons->fixed(btn_parse_csv, 80);
         flex_top_buttons->fixed(btn_report, 80);
+        flex_top_buttons->fixed(btn_report_month, 120);
         flex_top_buttons->fixed(btn_all, 80);
         flex_top_buttons->fixed(btn_save, 80);
         flex_top_buttons->fixed(btn_exit, 80);
@@ -398,6 +512,7 @@ View::View(Fl_Double_Window *w) : window(static_cast<AppWindow*>(w))
     window->btn_parse_csv->callback(clb_parse_csv, this);
     window->btn_all->callback(clb_all, this);
     window->btn_report->callback(clb_report, this);
+    window->btn_report_month->callback(clb_report_month, this);
 }
 
 void View::update(const std::any &data, InterfacesApp::DataType datatype)
@@ -495,24 +610,57 @@ void View::handle_open_file()
 
 void View::handle_print_report()
 {
+    clear_table_stats();
+    if (!window) return;
+    
+    window->table_statistics->is_total = true;
+    
     if (on_start_stats)
     {
         on_start_stats();
     }
-    if (window && datasource)
+
+    if (datasource)
     {
         window->table_statistics->set_data(datasource);
         window->table_parse->hide();
         window->table_statistics->show();
-        window->main_flex->layout(); 
-        
+        window->flex_table_container->layout();
+        window->main_flex->layout();
         window->table_statistics->redraw();
+        window->redraw();
     }
     else
     {
-        printf("EEERRRR view.cpp 503\n");
-        window->table_statistics->set_data(nullptr);
         fl_alert("Нет данных для отображения! Сначала выберите файл и запустите парсинг.");
+    }
+};
+
+void View::handle_print_report_month()
+{
+    clear_table_stats();
+    if (!window) return;
+    
+    window->table_statistics->show_month_dialog();
+    
+    if (window->table_statistics->is_valid_month())
+    {
+        window->table_statistics->is_total = false;
+        if (on_start_stats)
+        {
+            on_start_stats();
+        }
+
+        if (datasource)
+        {
+            window->table_statistics->set_data(datasource);
+            window->table_parse->hide();
+            window->table_statistics->show();            
+            window->flex_table_container->layout();
+            window->main_flex->layout();
+            window->table_statistics->redraw();
+            window->redraw();
+        }
     }
 };
 

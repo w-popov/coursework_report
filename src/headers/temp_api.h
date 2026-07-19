@@ -126,6 +126,8 @@ FILE* show_open_file_status (const char *file_name, int64_t *filesize);
  */
 void show_help(void);
 
+int save_to_html(const struct TemperatureStats *data, size_t size, const char *filename);
+
 #ifdef __cplusplus
 }
 #endif

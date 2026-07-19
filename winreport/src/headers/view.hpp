@@ -40,19 +40,23 @@ protected:
 
 class StatsTable : public Fl_Table 
 {
-private:
-    struct Statistics *datasource = nullptr; 
-    std::vector<std::string> column_headers;
+    private:
+      struct Statistics *datasource = nullptr; 
+      std::vector<std::string> column_headers;
+        
+    public:
+      int month = 0;
+      bool is_total = true;
+
+      StatsTable(int X, int Y, int W, int H, const char *L = 0);
+      void set_data(struct Statistics *stats); 
+      void clear_data();
+      void resize(int X, int Y, int W, int H) override;
+      bool is_valid_month();
+      void show_month_dialog();
     
-public:
-    StatsTable(int X, int Y, int W, int H, const char *L = 0);
-    
-    void set_data(struct Statistics *stats); 
-    void clear_data();
-    void resize(int X, int Y, int W, int H) override;
-    
-protected:
-    void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override;
+    protected:
+      void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override;
 };
 
 
@@ -64,6 +68,7 @@ class AppWindow : public Fl_Double_Window
     Fl_Button *btn_open_file;
     Fl_Button *btn_parse_csv;
     Fl_Button *btn_report;
+    Fl_Button *btn_report_month;
     Fl_Button *btn_all;
     Fl_Button *btn_save;
     Fl_Button *btn_exit;
@@ -90,7 +95,6 @@ class View : public InterfacesApp::Observer
     private:
       IStorage_t *current_dataset = nullptr;
       struct Statistics *datasource = nullptr;
-      uint16_t monthstats = 0;
     public:
       /* Эти функции вызовет контроллер для связи с моделью */
       std::function<void(const char* path)> on_file_selected = nullptr;
@@ -102,6 +106,7 @@ class View : public InterfacesApp::Observer
       void handle_parse_csv ();
       void handle_print_all();
       void handle_print_report();
+      void handle_print_report_month();
 
       void set_status_file (const char *name);
       void update_progress_bar_value (int64_t current, int64_t total);
@@ -132,6 +137,13 @@ class View : public InterfacesApp::Observer
       {
           (void)w;
           static_cast<View *>(data)->handle_print_report();
+      }
+
+      // колбэк кнопки Отчет за месяц
+      static void clb_report_month (Fl_Widget *w, void *data)
+      {
+          (void)w;
+          static_cast<View *>(data)->handle_print_report_month();
       }
 
       AppWindow *window = nullptr; 

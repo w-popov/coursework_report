@@ -41,6 +41,7 @@ int main (int argc, char *argv[])
 
     // Переменные для сохранения аргументов командной строки
     char *filename_arg = NULL;
+    char *filename_html = NULL;
     uint16_t month_arg = 0; // 0 означает вывод за весь год
     int is_print = 0;       // вывод на экран?
     int is_sort = 0;        // сортировать?
@@ -75,12 +76,15 @@ int main (int argc, char *argv[])
 
     // разбор флагов и сохранение в параметры
     opterr = 0;
-    while ((key = getopt(argc, argv, "f:m:s:hp")) != -1)
+    while ((key = getopt(argc, argv, "f:m:s:hpo:")) != -1)
     {
         switch (key)
         {
         case 'f':
             filename_arg = optarg;
+            break;
+        case 'o':
+            filename_html = optarg;
             break;
         case 'p':
             is_print = 1;
@@ -192,6 +196,11 @@ int main (int argc, char *argv[])
             print_temperature_stats_array((struct TemperatureStats *)array->raw_data(array),
                 array->size(array));
         }
+    }
+
+    if (filename_html && result)
+    {
+        save_to_html((struct TemperatureStats *)array->raw_data(array), array->size(array), filename_html);
     }
 
     // Освобождение памяти

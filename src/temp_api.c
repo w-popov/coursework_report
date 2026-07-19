@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include "temp_api.h"
 #include "parser_csv.h"
+#include "html_templates.h"
 
 /* --------------------- вывод статистики по каждому месяцу: ------------*/
 /**
@@ -304,14 +305,15 @@ void show_help (void)
     printf("\n────────────────────────────────────────────────────────────\n");
     printf("Справка по использованию программы.\n");
     printf("Аргументы командной строки:\n");
-    printf("  -h                Вызов этой справки\n");
-    printf("  -f <filename.csv> Указать имя файла для парсинга (обязательно)\n");
-    printf("  -m <номер месяца> Вывод статистики только за конкретный месяц (1-12)\n");
-    printf("  -p                Вывод данных с файла на экран\n");
-    printf("  -s <N>            Сортировка по месяцу и температуре.\n");
-    printf("                    Где N = 1 по возрастанию, N = 0 по убыванию.\n");
-    printf("                    Cортирует прочитанный из файла массив.\n");
-    printf("                    Для вывода введите: <program> -f <file name> -p -s N\n");
+    printf("  -h                  Вызов этой справки\n");
+    printf("  -f <filename.csv>   Указать имя файла для парсинга (обязательно)\n");
+    printf("  -m <номер месяца>   Вывод статистики только за конкретный месяц (1-12)\n");
+    printf("  -p                  Вывод данных с файла на экран\n");
+    printf("  -s <N>              Сортировка по месяцу и температуре.\n");
+    printf("                      Где N = 1 по возрастанию, N = 0 по убыванию.\n");
+    printf("                      Cортирует прочитанный из файла массив.\n");
+    printf("                      Для вывода введите: <program> -f <file name> -p -s N\n");
+    printf("  -o <filename.html>  Сохранить статисику в .html файл\n");
     printf("─────────────────────────────────────────────────────────────\n\n");
 }
 
@@ -386,5 +388,86 @@ FILE *show_open_file_status (const char *file_name, int64_t *filesize)
     printf("═══════════════════════════════════════════════════════════\n");
     
     return file;
+}
+
+/**
+ * Сохранение массива структур в JS object
+ * формат: y - год, m - месяц, d - день, h - час, mn - минут, t - температура     
+ */
+static int save_array_stats_to_JS_objects_array 
+(const struct TemperatureStats *data, size_t size, FILE *file) 
+{
+    if (!data || !file)
+    {
+        perror("Не валидные входные аргументы\n");
+        return -1;
+    }
+    char *prog_buffer = (char *)malloc(1024 * 1024);
+
+    if (!prog_buffer) 
+    {
+        perror("Ошибка выделения памяти для буфера\n");
+        return -3; 
+    }
+    setvbuf(file, prog_buffer, _IOFBF, 1024 * 1024);
+
+    fprintf(file, "<script>\n");
+    fprintf(file, "const arrayTempStats = [\n");
+
+    for (size_t i = 0; i < size; ++i) {
+        fprintf(file, "{\"y\":%u,\"m\":%u,\"d\":%u,\"h\":%u,\"mn\":%u,\"t\":%d}",
+                data[i].year, 
+                data[i].month, 
+                data[i].day, 
+                data[i].hours, 
+                data[i].minutes, 
+                data[i].temperature
+            );
+
+        if (i < size - 1)
+        {
+            fprintf(file, ",");
+        } 
+        else 
+        {
+            fprintf(file, "\n");
+        }
+    }
+    fprintf(file, "];\n");
+    fprintf(file, "%s", js_code);
+    fprintf(file, "%s", js_drawChart);
+    fprintf(file, "</script>\n");
+    fprintf(file, "</html>\n");
+    fclose(file);
+    
+    if (prog_buffer) 
+    {
+        free(prog_buffer);
+    }
+
+    return 0;
+}
+
+/**
+ * Cохранение данных в html
+ */
+int save_to_html(const struct TemperatureStats *data, size_t size, const char *filename)
+{
+    if (!filename)
+    {
+        perror("Не валидные входные аргументы\n");
+        return -1;
+    }
+
+    FILE *file = fopen(filename, "w");
+
+    if (!file) 
+    {
+        perror("Не удалось открыть файл для записи\n");
+        return -2;
+    }
+    fprintf(file, "%s", html_template);
+        
+    return save_array_stats_to_JS_objects_array(data, size, file);
 }
 

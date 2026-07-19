@@ -120,6 +120,17 @@ void ModelParse::parsing(const char* filename)
 
 };
 
+/**
+ * Сохранить в файл html
+ */
+int ModelParse::save_file_to_html(const char *filename)
+{
+    if (filename)
+    {
+        return save_to_html((struct TemperatureStats *)array->raw_data(array), array->size(array), filename);
+    }
+    return -5;
+}
 
 ModelParse::ModelParse()
 {

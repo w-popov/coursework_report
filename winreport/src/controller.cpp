@@ -36,6 +36,16 @@ AppController::AppController
             }
         };
 
+        // колбэк: отдать модели имя файла для сохранения 
+        view->on_file_save_to_html = [model](const char *path) -> int
+        {
+            if (model && path)
+            {
+                return model->save_file_to_html(path);
+            }
+            return -5;
+        };
+
         // колбэк: запуск парсинга
         view->on_start_parsing = [model, v]()
         {

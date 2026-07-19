@@ -513,6 +513,8 @@ View::View(Fl_Double_Window *w) : window(static_cast<AppWindow*>(w))
     window->btn_all->callback(clb_all, this);
     window->btn_report->callback(clb_report, this);
     window->btn_report_month->callback(clb_report_month, this);
+    window->btn_save->callback(clb_save_to_html, this);
+    window->btn_exit->callback(clb_exit, this);
 }
 
 void View::update(const std::any &data, InterfacesApp::DataType datatype)
@@ -687,6 +689,53 @@ void View::handle_print_all()
     }
 };
 
+void View::handle_save_html()
+{
+    if (window && current_dataset && current_dataset->size(current_dataset) > 0)
+    {
+
+        Fl_Native_File_Chooser fnfc;
+        fnfc.title("Сохранить HTML файл");
+        fnfc.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
+        fnfc.filter("HTML Файлы\t*.html\n""Все файлы\t*.*");
+        fnfc.preset_file("statistics.html");
+        fnfc.options(Fl_Native_File_Chooser::SAVEAS_CONFIRM);
+    
+        switch (fnfc.show())
+        {
+            case 0:  // ok
+            {
+                const char* filename = fnfc.filename();
+                std::string path(filename);
+                if (path.find(".html") == std::string::npos)
+                {
+                    path += ".html";
+                }
+                if (on_file_save_to_html)
+                {
+                    int status = on_file_save_to_html(path.c_str());
+                    if (status == 0)
+                        fl_message("Файл сохранен: %s", path.c_str());
+                    else
+                    {
+                        fl_alert("Ошибка сохранения файла!");
+                    }
+                }
+                break;
+            }
+            case 1:  // Отмена
+                break;
+            case -1: // Ошибка
+                fl_alert("Ошибка выбора файла: %s", fnfc.errmsg());
+                break;
+        }
+    }
+    else
+    {
+        fl_alert("Нет данных! Сначала выберите файл и запустите парсинг.");
+    }
+};
+
 void View::handle_parse_csv()
 {
     if (on_start_parsing)
@@ -788,5 +837,17 @@ void View::clear_table_stats()
         datasource = nullptr;
     }
 };
+
+void View::handle_exit()
+{
+    if (window)
+    {
+        window->hide();
+    }
+    else
+    {
+        exit(0);
+    }
+}
 
 } // namespace ViewApp

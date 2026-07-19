@@ -100,6 +100,7 @@ class View : public InterfacesApp::Observer
       std::function<void(const char* path)> on_file_selected = nullptr;
       std::function<void()> on_start_parsing = nullptr;
       std::function<void()> on_start_stats = nullptr;
+      std::function<int(const char* path)> on_file_save_to_html = nullptr;
 
       /* Вызывают колбэки кнопок */
       void handle_open_file ();
@@ -107,6 +108,8 @@ class View : public InterfacesApp::Observer
       void handle_print_all();
       void handle_print_report();
       void handle_print_report_month();
+      void handle_save_html();
+      void handle_exit();
 
       void set_status_file (const char *name);
       void update_progress_bar_value (int64_t current, int64_t total);
@@ -144,6 +147,20 @@ class View : public InterfacesApp::Observer
       {
           (void)w;
           static_cast<View *>(data)->handle_print_report_month();
+      }
+
+      // колбэк кнопки в .html
+      static void clb_save_to_html(Fl_Widget *w, void *data)
+      {
+          (void)w;
+          static_cast<View *>(data)->handle_save_html();
+      }
+
+      // колбэк кнопки Выход
+      static void clb_exit (Fl_Widget *w, void *data)
+      {
+          (void)w;
+          static_cast<View *>(data)->handle_exit();
       }
 
       AppWindow *window = nullptr; 

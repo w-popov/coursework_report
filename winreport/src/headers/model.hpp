@@ -187,6 +187,7 @@ class ModelParse : public Observable
     void model_free();
     void storages_clear();
     void statistics();
+    int save_file_to_html(const char *file);
 };
 
 } // namespace ModelApp

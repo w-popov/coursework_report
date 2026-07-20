@@ -66,3 +66,4 @@ bin/
 runtests/
 *cache/*
 *test_scanf_*
+fltk-install/

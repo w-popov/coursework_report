@@ -93,9 +93,11 @@ endif
 
 # FLTK библиотеки
 ifeq ($(IS_WINDOWS), 1)
+    LDFLAGS     += -static -static-libgcc -static-libstdc++
+    GUI_LDFLAGS += -static -static-libgcc -static-libstdc++ -mwindows
     GUI_LDLIBS = -lfltk_images -lfltk_png -lfltk_z -lfltk -lgdiplus -lole32 -luuid -lcomctl32 -lgdi32 -lcomdlg32 -lws2_32 -lwinspool
-    GUI_LDFLAGS += -mwindows
 else
+    # Для Linux динамическая сборка
     GUI_LDLIBS = -lfltk_images -lfltk_png -lfltk_z -lfltk -lX11 -lXft -lXrender -lfontconfig -lpthread -ldl -lm
 endif
 

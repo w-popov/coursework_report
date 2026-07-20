@@ -56,11 +56,10 @@ ifeq ($(DEBUG), 1)
     CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 -I$(HEAD_DIR) -DDEBUG
     
     # FLTK флаги для Debug
-    GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 \
-                   -I$(GUI_HEAD_DIR) -I$(HEAD_DIR) -I$(FLTK_PREFIX)/include -DDEBUG
+    GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -g -O0 -I$(GUI_HEAD_DIR) -I$(HEAD_DIR) -I$(FLTK_PREFIX)/include -DDEBUG
     
     LDFLAGS = -lm
-    GUI_LDFLAGS = -L$(FLTK_PREFIX)/lib -static-libgcc -static-libstdc++ -lm
+    GUI_LDFLAGS = -L$(FLTK_PREFIX)/lib -lm
     
     # Каталоги для Debug режима
     BUILD_DIR   = $(BUILD_BASE_DIR)/debug
@@ -76,11 +75,10 @@ else
     CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto -I$(HEAD_DIR) -DNDEBUG
     
     # FLTK флаги для Release
-    GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto \
-                   -I$(GUI_HEAD_DIR) -I$(HEAD_DIR) -I$(FLTK_PREFIX)/include -DNDEBUG
+    GUI_CXXFLAGS = $(CXXSTANDARD) -Wall -Wextra -Wpedantic -O3 -flto -I$(GUI_HEAD_DIR) -I$(HEAD_DIR) -I$(FLTK_PREFIX)/include -DNDEBUG
     
-    LDFLAGS = -flto=auto -static-libgcc -static-libstdc++ -static -s -lm
-    GUI_LDFLAGS = -L$(FLTK_PREFIX)/lib -flto -s -lm
+    LDFLAGS = -flto=auto -s -lm
+    GUI_LDFLAGS = -L$(FLTK_PREFIX)/lib -flto=auto -s -lm
     
     # Каталоги для Release режима
     BUILD_DIR   = $(BUILD_BASE_DIR)/release
@@ -141,12 +139,12 @@ $(EXEC_TARGET): $(OBJS) | $(EXECUTE_DIR)
 # Линковка GUI приложения
 ifeq ($(IS_WINDOWS), 1)
 $(EXEC_GUI_TARGET): $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) $(GUI_RES_OBJ) | $(EXECUTE_DIR)
-	$(CXX) $(GUI_CXXFLAGS) $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) $(GUI_RES_OBJ) -o $(EXEC_GUI_TARGET) $(GUI_LDFLAGS) $(GUI_LDLIBS)
+	$(CXX) $(GUI_LDFLAGS) $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) $(GUI_RES_OBJ) $(GUI_LDLIBS) -o $(EXEC_GUI_TARGET)
 	cp $(EXEC_GUI_TARGET) ./$(WIN_TARGET)
 	@echo "GUI copy app: $(WIN_TARGET)"
 else
 $(EXEC_GUI_TARGET): $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) | $(EXECUTE_DIR)
-	$(CXX) $(GUI_CXXFLAGS) $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) -o $(EXEC_GUI_TARGET) $(GUI_LDFLAGS) $(GUI_LDLIBS)
+	$(CXX) $(GUI_LDFLAGS) $(OBJS_WITHOUT_MAIN) $(GUI_OBJS) $(GUI_LDLIBS) -o $(EXEC_GUI_TARGET)
 	cp $(EXEC_GUI_TARGET) ./$(WIN_TARGET)
 	@echo "GUI copy app: $(WIN_TARGET)"
 endif

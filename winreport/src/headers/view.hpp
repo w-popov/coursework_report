@@ -7,6 +7,7 @@
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Browser.H>
 #include <FL/Fl_Table.H>
+#include <FL/fl_ask.H>
 #include <FL/fl_draw.H>
 #include <functional>
 #include <any>
@@ -21,6 +22,7 @@ namespace ViewApp
 class DataTable;
 class StatsTable;
 
+// таблица всех данных
 class DataTable : public Fl_Table 
 {
 private:
@@ -38,7 +40,7 @@ protected:
     void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override; 
 };
 
-
+// таблица вычисленных средних температур
 class StatsTable : public Fl_Table 
 {
     private:
@@ -60,7 +62,7 @@ class StatsTable : public Fl_Table
       void draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H) override;
 };
 
-
+// главное окно приложения
 class AppWindow : public Fl_Double_Window
 {
   public:
@@ -73,6 +75,7 @@ class AppWindow : public Fl_Double_Window
     Fl_Button *btn_all;
     Fl_Button *btn_save;
     Fl_Button *btn_exit;
+    Fl_Button *btn_about;
 
     Fl_Flex *flex_errors;
     Fl_Browser *browse_errs;
@@ -90,7 +93,7 @@ class AppWindow : public Fl_Double_Window
     AppWindow(int width, int height, const char *title = nullptr);
 };
 
-
+// Вид MVC
 class View : public InterfacesApp::Observer
 {
     private:
@@ -164,18 +167,31 @@ class View : public InterfacesApp::Observer
           static_cast<View *>(data)->handle_exit();
       }
 
+      static void clb_about (Fl_Widget *w, void *data)
+      {
+          (void)w;
+          (void)data;
+          fl_message("%s%s%s", 
+            "Курсовая работа. Си базовый уровень. гр.Д01-134 Попов. В.Г.\n",
+            "Программа-обертка с графическим интерфейсом над Си кодом report.\n",
+            "FLTK 1.4.5 C++\n"
+          );
+      }
+
       AppWindow *window = nullptr; 
+
+      char file_size_text[InterfacesApp::BUFFER_SIZE] = {'\0'};
 
       virtual ~View() = default;
       explicit View(Fl_Double_Window *w);
 
       void update(const std::any& data, InterfacesApp::DataType datatype) override; 
 
+      void calc_size_file(int64_t fsize);
       void show_widget(Fl_Widget*, Fl_Flex*);
       void hide_widget(Fl_Widget*, Fl_Flex*);
       void clear_table_parse();
       void clear_table_stats();
-
 };
 
 } // namespace ViewApp

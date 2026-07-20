@@ -4,12 +4,14 @@
 #include "parser_csv.h"
 #include <FL/Fl.H>
 #include <FL/Fl_Native_File_Chooser.H>
+#include <FL/Fl_PNG_Image.H>
 #include <filesystem>
 #include <cstdio>
+#include <cstring>
 
 namespace ViewApp
 {
-
+/* Таблица статистики за год */
 StatsTable::StatsTable(int X, int Y, int W, int H, const char *L)
     : Fl_Table(X, Y, W, H, L)
 {
@@ -34,7 +36,6 @@ StatsTable::StatsTable(int X, int Y, int W, int H, const char *L)
 void StatsTable::set_data(struct Statistics *data)
 {
     datasource = data;
-    datasource = data;
     
     if (is_total) 
     {
@@ -48,6 +49,7 @@ void StatsTable::set_data(struct Statistics *data)
     this->redraw();
 };
 
+/* Показать таблицу статистики */
 void StatsTable::draw_cell(TableContext context, int R, int C, int X, int Y, int W, int H)
 {
     static const char* month_names[] = {
@@ -395,8 +397,7 @@ void DataTable::draw_cell(TableContext context, int R, int C, int X, int Y, int 
     }
 };
 
-
-
+//////////////////// Главное окно приложения /////////////////
 AppWindow::AppWindow(int width, int height, const char *title)
     : Fl_Double_Window(width, height, title)
 {
@@ -409,6 +410,7 @@ AppWindow::AppWindow(int width, int height, const char *title)
     init_layout();
 };
 
+/* Создать все виджеты */
 void AppWindow::init_layout()
 {
     main_flex = new Fl_Flex(0, 0, this->w(), this->h());
@@ -438,6 +440,12 @@ void AppWindow::init_layout()
         btn_save = new Fl_Button(0, 0, 80, 30, "В .html");
         btn_save->labelsize(12);
 
+        btn_about = new Fl_Button(0, 0, 60, 40);
+        Fl_PNG_Image *icon_about = new Fl_PNG_Image("icon_about", InterfacesApp::about_png, InterfacesApp::about_png_len);
+        icon_about->scale(40, 40);
+        btn_about->labelsize(12);
+        btn_about->image(icon_about);
+
         btn_exit = new Fl_Button(0, 0, 80, 30, "Выход");
         btn_exit->labelsize(12);
 
@@ -449,7 +457,7 @@ void AppWindow::init_layout()
         flex_top_buttons->fixed(btn_all, 80);
         flex_top_buttons->fixed(btn_save, 80);
         flex_top_buttons->fixed(btn_exit, 80);
-
+        flex_top_buttons->fixed(btn_about, 60);
         flex_top_buttons->end();
     }
 
@@ -460,7 +468,7 @@ void AppWindow::init_layout()
         browse_errs->box(FL_FLAT_BOX);
         flex_errors->box(FL_FLAT_BOX);
         flex_errors->end();
-        flex_errors->hide();
+        // flex_errors->hide();
     }
 
     {
@@ -515,16 +523,20 @@ View::View(Fl_Double_Window *w) : window(static_cast<AppWindow*>(w))
     window->btn_report_month->callback(clb_report_month, this);
     window->btn_save->callback(clb_save_to_html, this);
     window->btn_exit->callback(clb_exit, this);
+    window->btn_about->callback(clb_about, this);
 }
 
+/* модель обновилась. сюда приходят данные от модели */
 void View::update(const std::any &data, InterfacesApp::DataType datatype)
 {
     switch (datatype)
     {
+    // получить массив структур
     case InterfacesApp::DataType::FullRowsList:
         try 
         {
             current_dataset = std::any_cast<IStorage_t*>(data);
+
             std::string msgtotalrow = "@C4Валидных строк: " + std::to_string(current_dataset->size(current_dataset));
             window->browse_errs->add(msgtotalrow.c_str());
             window->table_parse->redraw();
@@ -534,7 +546,7 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
             current_dataset = nullptr;
         }
         break;
-
+    // получить массив ошибок, показать ошибки
     case InterfacesApp::DataType::ErrorsParse:
         update_progress_bar_value(100, 100);
         try 
@@ -542,11 +554,12 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
             auto errors = std::any_cast<IStorage_t*>(data);
             size_t size = errors->size(errors);
             window->browse_errs->clear();
+            std::string sz = "Размер файла: " + std::string(file_size_text);
+            window->browse_errs->add(sz.c_str());
             std::string msgerrsize = "Ошибок: " + std::to_string(size);
             window->browse_errs->add(msgerrsize.c_str());
             if (size > 0)
             {
-                window->flex_errors->show();
                 window->main_flex->layout();
                 for (size_t i = 0; i < size; ++i)
                 {
@@ -563,6 +576,18 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
             printf("Type bad error\n");
         }
         break;
+    // получить размер файла
+    case InterfacesApp::DataType::GetSizeFile:
+        try 
+        {
+            int64_t fsz = std::any_cast<int64_t>(data);
+            calc_size_file(fsz);
+        }
+        catch (const std::bad_any_cast& e) 
+        {
+            printf("Type bad error\n");
+        }
+        break;
 
     case InterfacesApp::DataType::ErrorOpenFile:
         fl_alert("Ошибка: Не удалось открыть выбранный CSV файл!");
@@ -572,6 +597,7 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
         fl_alert("Критическая ошибка: Внутренний сбой структуры парсера!");
         break;
 
+    // получить расчет температур
     case InterfacesApp::DataType::AverageTable:
         try 
         {
@@ -587,6 +613,7 @@ void View::update(const std::any &data, InterfacesApp::DataType datatype)
     }
 };
 
+// колбэк открыть файл .csv
 void View::handle_open_file()
 {
     Fl_Native_File_Chooser fnfc;
@@ -610,6 +637,7 @@ void View::handle_open_file()
     }
 };
 
+// колбэк показать таблицу средних температур
 void View::handle_print_report()
 {
     clear_table_stats();
@@ -638,6 +666,27 @@ void View::handle_print_report()
     }
 };
 
+// колбэк вся таблица
+void View::handle_print_all()
+{
+    if (window && current_dataset && current_dataset->size(current_dataset) > 0)
+    {
+        window->table_parse->set_data(current_dataset);
+        window->table_statistics->hide();
+        window->table_parse->show();
+        window->flex_table_container->layout();
+        window->main_flex->layout(); 
+        window->table_parse->redraw();
+        window->redraw();
+    }
+    else
+    {
+        window->table_parse->set_data(nullptr);
+        fl_alert("Нет данных для отображения! Сначала выберите файл и запустите парсинг.");
+    }
+};
+
+// колбэк таблица температур за один месяц
 void View::handle_print_report_month()
 {
     clear_table_stats();
@@ -666,29 +715,7 @@ void View::handle_print_report_month()
     }
 };
 
-void View::handle_print_all()
-{
-    if (window && current_dataset && current_dataset->size(current_dataset) > 0)
-    {
-        window->table_parse->set_data(current_dataset);
-        window->table_statistics->hide();
-        window->table_parse->show();
-        window->main_flex->layout(); 
-        static_cast<Fl_Widget*>(window->table_parse)->resize(
-            window->table_parse->x(), 
-            window->table_parse->y(), 
-            window->table_parse->w(), 
-            window->table_parse->h()
-        );
-        window->table_parse->redraw();
-    }
-    else
-    {
-        window->table_parse->set_data(nullptr);
-        fl_alert("Нет данных для отображения! Сначала выберите файл и запустите парсинг.");
-    }
-};
-
+// колбэк сохранить в файл .html
 void View::handle_save_html()
 {
     if (window && current_dataset && current_dataset->size(current_dataset) > 0)
@@ -736,6 +763,7 @@ void View::handle_save_html()
     }
 };
 
+// колбэк запуск парсинга
 void View::handle_parse_csv()
 {
     if (on_start_parsing)
@@ -744,15 +772,18 @@ void View::handle_parse_csv()
     }
 };
 
+// имя файла снизу окна
 void View::set_status_file(const char *name)
 {
     if (window->lbl_file_name)
     {
+        window->lbl_file_name->copy_label("");
         window->lbl_file_name->copy_label(name);
         window->lbl_file_name->redraw();
     }
 };
 
+// прогрессбар парсинга файла. его указатель передается модели
 void View::update_progress_bar_value(int64_t current, int64_t total)
 {
     if (!window->progress_bar || total <= 0)
@@ -835,6 +866,46 @@ void View::clear_table_stats()
         window->main_flex->layout();
         window->redraw();
         datasource = nullptr;
+    }
+};
+
+// размер файла
+void View::calc_size_file(int64_t fsize)
+{
+    memset(file_size_text, '\0', InterfacesApp::BUFFER_SIZE);
+    double display_size = (double)fsize;
+    const char *unit = "b";
+    const int64_t KB = 1024;
+    const int64_t MB = 1024 * 1024;
+    const int64_t GB = 1024 * 1024 * 1024;
+
+    if (fsize >= GB)
+    {
+        display_size = (double)fsize / GB;
+        unit = "Gb";
+    }
+    else if (fsize >= MB)
+    {
+        display_size = (double)fsize / MB;
+        unit = "Mb";
+    }
+    else if (fsize >= KB)
+    {
+        display_size = (double)fsize / KB;
+        unit = "Kb";
+    }
+    else
+    {
+        display_size = (double)fsize;
+        unit = "b";
+    }
+    if (fsize < KB)
+    {
+        snprintf(file_size_text, InterfacesApp::BUFFER_SIZE, "%.0f %s", display_size, unit);
+    }
+    else
+    {
+        snprintf(file_size_text, InterfacesApp::BUFFER_SIZE, "%.2f %s", display_size, unit);
     }
 };
 

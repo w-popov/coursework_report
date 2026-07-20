@@ -115,6 +115,7 @@ void ModelParse::parsing(const char* filename)
         notify(std::any{}, InterfacesApp::DataType::ErrorNullParse);
         return;
     }
+    notify(filesize, InterfacesApp::DataType::GetSizeFile);
     notify(errors_array, InterfacesApp::DataType::ErrorsParse);
     notify(array, InterfacesApp::DataType::FullRowsList);
 

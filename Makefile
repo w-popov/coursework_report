@@ -96,11 +96,11 @@ endif
 # FLTK библиотеки
 ifeq ($(IS_WINDOWS), 1)
     # Windows
-    GUI_LDLIBS = -lfltk_images -lfltk -lgdiplus -lole32 -luuid -lcomctl32 -lgdi32 -lcomdlg32 -lws2_32 -lwinspool
+    GUI_LDLIBS = -lfltk_images -lpng -lfltk -lgdiplus -lole32 -luuid -lcomctl32 -lgdi32 -lcomdlg32 -lws2_32 -lwinspool
     GUI_LDFLAGS += -mwindows
 else
     # Linux
-    GUI_LDLIBS = -lfltk_images -lfltk -lX11 -lXft -lXrender -lfontconfig -lpthread -ldl -lm
+    GUI_LDLIBS = -lfltk_images -lpng -lfltk -lX11 -lXft -lXrender -lfontconfig -lpthread -ldl -lm
 endif
 
 # Файл ресурсов (только Windows)

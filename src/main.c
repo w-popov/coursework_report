@@ -200,7 +200,16 @@ int main (int argc, char *argv[])
 
     if (filename_html && result)
     {
-        save_to_html((struct TemperatureStats *)array->raw_data(array), array->size(array), filename_html);
+        int err = save_to_html(
+            (struct TemperatureStats *)array->raw_data(array), 
+            array->size(array), filename_html
+        );
+        if (!err)
+        {
+            printf(GREEN"═══════════════════════════════════════════════════════════\n");
+            printf("Файл %s сохранен.\n", filename_html);
+            printf(GREEN"═══════════════════════════════════════════════════════════\n"RESET);
+        }
     }
 
     // Освобождение памяти

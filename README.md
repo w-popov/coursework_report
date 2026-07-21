@@ -9,15 +9,13 @@
 * Создать где-то каталог, зайти в него, открыть в нем терминал.
 * Ввести в терминале: 
 ```Bash
-git clone --no-checkout https://github.com/w-popov/c_base.git
+git clone https://github.com/w-popov/coursework_report.git
 
-cd c_base/
-git sparse-checkout set HW12
-git checkout
-cd HW12/
+cd coursework_report/
+
 ```
 
-##### Сборка:
+##### Сборка консольной версии:
 * Режим отладки:
 ```Bash
 make
@@ -34,6 +32,35 @@ make DEBUG=0
 ```Bash
 mingw32-make.exe DEBUG=0
 ```
+##### Сборка версии с gui:
+* Режим отладки:
+```Bash
+make winreport
+```
+или
+```Bash
+mingw32-make.exe winreport
+```
+* Release режим:
+```Bash
+make winreport DEBUG=0
+```
+или
+```Bash
+mingw32-make.exe winreport DEBUG=0
+```
+##### Очистка:
+```Bash
+make clean
+```
+или
+```Bash
+mingw32-make.exe clean
+```
+Сборка gui версии впервые займет от нескольких минут, т-к происходит скачивание и сборка библиотеки. 
+Сборку консольной и gui версий можно производить по отдельности.
+Программы собранные под windows в Release режиме переносимы, т-к линкуются статически с библиотеками libgcc, libstdc++.
+
 Исходные файлы ```.c``` находятся в ```src/```, файлы ```.h``` в ```src/headers```. Исполняемые файлы лежат в ```build/debug/bin``` и в ```build/release/bin```. Каталог ```build``` и его подкаталоги с файлами сгенерируется после запуска make с указанным режимом сборки.
 Для облегчения тестирования/отладки создается копия исполняемого файла в корневой каталог.
 

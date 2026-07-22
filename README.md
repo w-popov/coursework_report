@@ -273,6 +273,7 @@ struct ErrorParse
 ```C
 struct Callbacks
 {
+    void* self;                             // Для контекста С++. В Си не используется.
     CallbackProgressBar clb_progress;       // Указатель на ф-цию прогрессбара
     CallbackWriteToArray clb_write_to_arr;  // Указатель на ф-цию записи в массив данных
 };

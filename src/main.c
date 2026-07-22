@@ -220,6 +220,8 @@ int main (int argc, char *argv[])
 }
 
 /*
+git pull origin main
+
 
 temperature_big.csv
 valgrind --leak-check=full --track-origins=yes ./main -f temperature_small.csv

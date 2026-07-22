@@ -100,7 +100,7 @@ class View : public InterfacesApp::Observer
       IStorage_t *current_dataset = nullptr;
       struct Statistics *datasource = nullptr;
     public:
-      /* Эти функции вызовет контроллер для связи с моделью */
+      /* Этим *функциям контроллер назначит лямбды для связи с моделью/отображением */
       std::function<void(const char* path)> on_file_selected = nullptr;
       std::function<void()> on_start_parsing = nullptr;
       std::function<void()> on_start_stats = nullptr;
